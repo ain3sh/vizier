@@ -49,13 +49,17 @@
 
 .overlay-content {
     position: absolute; /* Position relative to the .fade-container */
-    top: 10%; /* Center vertically */
+    top: 10%; /* Position from the top edge */
     left: 50%; /* Center horizontally */
-    transform: translate(-50%, -50%); /* Adjust for the element's own dimensions */
+    transform: translateX(-50%); /* Only adjust horizontally, not vertically */
     width: 60%; /* Take up 60% of the width of the .fade-container */
+    max-height: 80vh; /* Limit height to 80% of viewport height */
     display: flex;
     flex-direction: column;
     text-align: left; 
+    overflow-y: auto; /* Add vertical scrollbar when needed */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    padding-bottom: 20px; /* Add some padding at bottom for better scrolling experience */
 }
 
 .overlay-title {
@@ -66,11 +70,14 @@
     overflow-wrap: break-word; /* Allow text to break onto the next line */
     word-break: break-word; /* Ensure long words break properly */
     white-space: normal; /* Allow text to wrap onto the next line */
+    flex-shrink: 0; /* Prevent shrinking, forcing items below to move down */
 }
 
 .overlay-text {
     margin-top: 20px;
     display: flex;
+    width: 100%;
+    flex-shrink: 0; /* Prevent shrinking, ensuring it pushes content below */
 }
 
 .query-bar-container {
@@ -86,3 +93,159 @@
     z-index: 2;
 }
 
+/* Sources container */
+.sources {
+  margin: 20px 0;
+  width: 100%;
+}
+
+.sources-card {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sources-header {
+  display: flex;
+  align-items: center;
+  background-color: #e0e0e0;
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sources-header .chevron-icon {
+  margin-right: 8px;
+}
+
+.sources-content {
+  padding: 15px;
+}
+
+/* Source items */
+.sources-list {
+  margin-bottom: 15px;
+  min-height: 50px;
+}
+
+.source-item {
+  margin-bottom: 10px;
+  cursor: move;
+}
+
+.source-item.dragging {
+  opacity: 0.5;
+}
+
+.source-card {
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.source-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f0f0f0;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #999;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.source-title {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-grow: 1;
+}
+
+.source-title span {
+  margin-left: 6px;
+}
+
+.delete-icon {
+  cursor: pointer;
+  color: #666;
+}
+
+.delete-icon:hover {
+  color: #ff0000;
+}
+
+/* Source details when expanded */
+.source-details {
+  padding: 12px;
+}
+
+.source-field {
+  margin-bottom: 8px;
+}
+
+.source-field label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  color: #555;
+}
+
+.source-field input,
+.source-field textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.source-field textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Add source button */
+.add-source-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #3a86ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.add-source-btn:hover {
+  background-color: #2a75ef;
+}
+
+/* Loading indicator and error message */
+.loading-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  color: #777;
+  font-style: italic;
+}
+
+.error-message {
+  padding: 15px;
+  color: #e53e3e;
+  background-color: #fff5f5;
+  border-radius: 6px;
+  border-left: 4px solid #e53e3e;
+  margin-bottom: 15px;
+}
