@@ -1,7 +1,7 @@
 import { ReactElement, useState, useEffect, useRef } from 'react';
 import { Textfit } from 'react-textfit';
 import { 
-  CircleStop, SendHorizonal, ChevronDown, ChevronRight, 
+  SendHorizonal, ChevronDown, ChevronRight, 
   X, Plus, GripVertical, Check, XCircle, Link 
 } from 'lucide-react';
 import axios from 'axios';
@@ -31,6 +31,12 @@ function Query() {
     const [showOverlay, setOverlay] = useState(false); // State to track the expanding animation
     const [responseData, setResponseData] = useState('Please wait while we process your request.'); // State to store API response
     const [currentPhase, setCurrentPhase] = useState<Phase>('query_refinement'); // Track the current phase
+    
+    // Add new state variables for query refinement
+    const [isQuerySatisfactory, setIsQuerySatisfactory] = useState(false);
+    const [queryFeedback, setQueryFeedback] = useState<string | null>(null);
+    const [refinedQuery, setRefinedQuery] = useState<string | null>(null);
+    const [isRefining, setIsRefining] = useState(false);
     
     // Collapsible states for each phase
     const [isQueryOpen, setIsQueryOpen] = useState(true);
@@ -78,7 +84,15 @@ function Query() {
     // Phase transition handlers
     const handleConfirm = () => {
         if (currentPhase === 'query_refinement') {
-            setCurrentPhase('source_refinement');
+            if (isQuerySatisfactory) {
+                setCurrentPhase('source_refinement');
+            } else {
+                // If query is not satisfactory, show refinement interface
+                setIsRefining(true);
+                if (refinedQuery) {
+                    setSearchValue(refinedQuery);
+                }
+            }
         } else if (currentPhase === 'source_refinement') {
             setCurrentPhase('draft_review');
         } else if (currentPhase === 'draft_review') {
@@ -88,6 +102,9 @@ function Query() {
             setOverlay(false);
             setResponseData('Please wait while we process your request.');
             setCurrentPhase('query_refinement');
+            setIsQuerySatisfactory(false);
+            setRefinedQuery(null);
+            setQueryFeedback(null);
         }
     };
     
@@ -287,6 +304,7 @@ function Query() {
         setOverlay(true); // Trigger the expanding animation
         setCurrentPhase('query_refinement');
         setIsQueryOpen(true);
+        setIsRefining(false);
 
         // set overlay-title as query text
         const overlayTitle = document.querySelector('.overlay-title') as HTMLElement;
@@ -303,22 +321,55 @@ function Query() {
             
             console.log('POST response:', response.data);
             
-            // Set the refined query suggestion in the response area
-            setResponseData(response.data.refinedQuery || response.data.suggestion || 
-                            'Based on your query, here\'s what I understand you\'re looking for: information about recent advances in artificial intelligence and machine learning, with a focus on practical applications.');
+            // Check if the query is satisfactory based on the response
+            if (response.data.isSatisfactory) {
+                setIsQuerySatisfactory(true);
+                setRefinedQuery(response.data.refinedQuery || searchValue);
+                setQueryFeedback(null);
+                setResponseData(`Your query is ready to proceed: "${response.data.refinedQuery || searchValue}"`);
+            } else {
+                setIsQuerySatisfactory(false);
+                setRefinedQuery(response.data.refinedQuery || null);
+                setQueryFeedback(response.data.feedback || 'Your query needs refinement.');
+                setResponseData(`Your query needs refinement: ${response.data.feedback || 'Please provide more specific details.'}`);
+                if (response.data.refinedQuery) {
+                    setResponseData(prev => `${prev}\n\nSuggested query: "${response.data.refinedQuery}"`);
+                }
+            }
             
+            // For development/demo purposes
+            if (!response.data) {
+                // Mock response for testing
+                const isMockSatisfactory = Math.random() > 0.5;
+                setIsQuerySatisfactory(isMockSatisfactory);
+                if (isMockSatisfactory) {
+                    setResponseData(`Your query is ready to proceed: "${searchValue}"`);
+                    setRefinedQuery(searchValue);
+                    setQueryFeedback(null);
+                } else {
+                    setResponseData(`Your query needs refinement: Please be more specific about what you're looking for.
+                    
+Suggested query: "${searchValue} with recent developments and practical applications"`);
+                    setRefinedQuery(`${searchValue} with recent developments and practical applications`);
+                    setQueryFeedback("Please be more specific about what you're looking for.");
+                }
+            }
         } catch (error) {
             console.error('Error sending query:', error);
             setResponseData('Error processing your request. Please try again.');
+
+            /** TEMPORARILY SET TO TRUE */
+            // setIsQuerySatisfactory(false);
+            setIsQuerySatisfactory(true);
         }
         
         setSearchValue(''); // Clear input field
     };
 
-    const handleStop = () => {
-        setOverlay(false); // Reset the overlay state when Stop is clicked
-        setResponseData('Please wait while we process your request.'); // Reset response text
-    };
+    // const handleStop = () => {
+    //     setOverlay(false); // Reset the overlay state when Stop is clicked
+    //     setResponseData('Please wait while we process your request.'); // Reset response text
+    // };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchValue(event.target.value); // Update the state with the input value
@@ -336,7 +387,11 @@ function Query() {
         let denyText = 'Deny';
         
         if (currentPhase === 'query_refinement') {
-            confirmText = 'Use This Query';
+            if (isQuerySatisfactory) {
+                confirmText = 'Use This Query';
+            } else {
+                confirmText = 'Refine Query';
+            }
             denyText = 'Cancel';
         } else if (currentPhase === 'source_refinement') {
             confirmText = 'Generate Draft';
@@ -362,7 +417,7 @@ function Query() {
 
     const queryItems: [string, ReactElement][] = [
         ['Search', <input type="text" className="search-input" placeholder="Ask anything..." value={searchValue} onChange={handleSearchChange} onKeyDown={handleKeyDown}/>],
-        ['Stop', <CircleStop size={40} className="stop-btn" onClick={handleStop}/>],
+        // ['Stop', <CircleStop size={40} className="stop-btn" onClick={handleStop}/>],
         ['Enter', <SendHorizonal size={40} className="send-btn" onClick={handleSend}/>],
     ];
 
@@ -402,6 +457,26 @@ function Query() {
                                 <div className="phase-content">
                                     <div className="query-refinement-content">
                                         <p className="query-text">{responseData}</p>
+                                        
+                                        {isRefining && !isQuerySatisfactory && (
+                                            <div className="query-refinement-input">
+                                                <input
+                                                    type="text"
+                                                    value={searchValue}
+                                                    onChange={handleSearchChange}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                                    placeholder="Refine your query..."
+                                                    className="refine-input"
+                                                />
+                                                <button 
+                                                    className="refine-send-btn"
+                                                    onClick={handleSend}
+                                                >
+                                                    <SendHorizonal size={16} />
+                                                    <span>Submit Refined Query</span>
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

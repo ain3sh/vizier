@@ -75,15 +75,18 @@
 
 .query-bar-container {
     /* No positioning properties here - keeps original document flow position */
+    opacity: 1;
     width: auto; /* Use natural width */
     transition: transform 0.5s ease-in-out; /* Only transition the transform property */
     z-index: 2; /* Increase z-index to ensure it stays above the overlay */
 }
 
 .query-bar-container.moved {
-    left: 50%;
-    transform: translateY(40vh) translate(-14%, -50%); /* Move to bottom of viewport */
-    z-index: 2;
+    opacity: 0;
+    pointer-events: none;
+    /* left: 50%;
+    transform: translateY(40vh) translate(-14%, -50%);
+    z-index: 2; */
 }
 
 /* Sources container */
@@ -453,4 +456,37 @@
 .url-cancel-btn:disabled, .url-add-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Query refinement input styling */
+.query-refinement-input {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.refine-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.refine-send-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.refine-send-btn:hover {
+    background-color: #0055bb;
 }
