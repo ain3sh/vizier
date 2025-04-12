@@ -41,8 +41,6 @@ async def create_query(data: dict, request: Request):
         "initial_query": initial_query
     })
 
-    #TODO backend now needs to refine the query and update refined_query field 
-
     return {"query_id": query_id, "status": "pending"}
 
 @router.get("/all")
@@ -73,5 +71,67 @@ async def get_query(query_id: str, request: Request):
 
     return dict(query)
 
-#TODO add call to mark query status as accepted 
-#TODO add call to get refined query directly via query id 
+@router.post("/{query_id}/accept")
+async def accept_query(query_id: str, request: Request):
+    user_id = get_current_user(request)
+
+    update_query = """
+    UPDATE queries SET status = 'accepted'
+    WHERE query_id = :query_id AND user_id = :user_id
+    """
+
+    await database.execute(update_query, {
+        "query_id": query_id,
+        "user_id": user_id
+    })
+
+    return {"message": "Query marked as accepted"}
+
+@router.post("/{query_id}/reject")
+async def reject_query(query_id: str, request: Request):
+    user_id = get_current_user(request)
+
+    update_query = """
+    UPDATE queries SET status = 'rejected'
+    WHERE query_id = :query_id AND user_id = :user_id
+    """
+
+    await database.execute(update_query, {
+        "query_id": query_id,
+        "user_id": user_id
+    })
+
+    return {"message": "Query marked as rejected"}
+
+
+#refine given query based on given feedback 
+
+@router.post("/{query_id}/refine")
+async def start_refinement(query_id: str, data: dict, request: Request):
+    user_id = get_current_user(request)
+
+    # fetch user profile from DB
+    row = await database.fetch_one("""
+        SELECT archetype, user_description, user_goals, user_experience
+        FROM users
+        WHERE user_id = :user_id
+    """, {"user_id": user_id})
+
+    if not row:
+        raise HTTPException(status_code=404, detail="User profile not found")
+
+    background_data = {
+        "user_type": row["archetype"] or "Unknown",
+        "research_purpose": row["user_goals"] or "Unknown",
+        "user_description": row["user_description"] or "Unknown",
+        "query_frequency": "weekly"
+    }
+
+    current_query = data.get("query")
+
+    if not current_query:
+        raise HTTPException(status_code=400, detail="Missing query")
+
+    request_obj = QueryRequest(query=current_query, background=UserBackground(**background_data))
+    response = await run_refinement(request_obj)
+    return response.dict()
