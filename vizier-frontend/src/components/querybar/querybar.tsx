@@ -9,8 +9,11 @@ const QueryBar: React.FC<QueryBarProps> = ({ li }) => {
     return (
         <div className="querybar-container">
             {li.map((item, index) => (
-                <div className="querybar-item" key={index}>
-                    {item[1]} {/* Render the icon */}
+                <div 
+                    className={`querybar-item ${item[0] === 'Search' ? 'querybar-item-grow' : ''}`} 
+                    key={index}
+                >
+                    {item[1]} {/* Render the element */}
                 </div>
             ))}
         </div>

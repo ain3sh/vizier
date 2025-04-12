@@ -1,16 +1,23 @@
 .querybar-container {
     display: flex;
-    justify-content: space-around;
     align-items: center;
-    border: 3px solid #666666;
-    border-radius: 30px;
-    padding: 10px;
+    flex-direction: row;
+    background-color: rgb(46, 46, 46);
+    border: 2px solid #303030;
+    border-radius: 15px;
+    gap: 10px; /* gap between elements */
+    padding: 3px;
+
 }
 
 .querybar-item {
-    /* padding: 0; */
-    text-align: center;
     display: flex;
     align-items: center;
-    justify-content: center;
+    flex-shrink: 0; /* Prevent shrinking by default */
+}
+
+/* Add a new class for the growing item */
+.querybar-item-grow {
+    flex-grow: 1; /* This item will grow to take available space */
+    flex-basis: 0; /* Start from 0 width and grow from there */
 }
