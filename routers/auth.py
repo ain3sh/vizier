@@ -2,10 +2,10 @@ from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from jose import jwt
 from httpx import AsyncClient
-# from database import database  # TEMP: commenting out db
 import os
 import uuid
 from dotenv import load_dotenv
+from database import database
 
 load_dotenv()
 
@@ -15,6 +15,8 @@ GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 REDIRECT_URI = os.getenv("REDIRECT_URI")
 JWT_SECRET = os.getenv("JWT_SECRET")
+
+
 
 
 '''url for frontend/testing to use: https://accounts.google.com/o/oauth2/v2/auth?
@@ -60,9 +62,32 @@ async def google_auth_callback(code: str):
         name = userinfo.get("name", "")
         picture = userinfo.get("picture", "")
 
-    # TEMP: skip DB, mock user ID
-    print("🧪 Step 4: Skipping DB. Using google_id as user_id")
-    user_id = google_id
+    # Step 4: Check DB for user
+    query = "SELECT * FROM users WHERE email = :email"
+    user = await database.fetch_one(query, {"email": email})
+
+    if not user:
+        print("➕ Creating new user in DB")
+        user_id = str(uuid.uuid4())
+        insert_query = """
+        INSERT INTO users (
+            user_id, email, name, google_id, picture_url,
+            archetype, user_description, user_goals, user_experience, acct_created_date
+        ) VALUES (
+            :user_id, :email, :name, :google_id, :picture,
+            NULL, NULL, NULL, NULL, NOW()
+        )
+        """
+        await database.execute(insert_query, {
+            "user_id": user_id,
+            "email": email,
+            "name": name,
+            "google_id": google_id,
+            "picture": picture
+        })
+    else:
+        print("✅ User found in DB")
+        user_id = user["user_id"]
 
     print("🔐 Step 5: Issuing JWT for user:", user_id)
     token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm="HS256")
