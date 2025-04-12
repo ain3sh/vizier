@@ -73,13 +73,6 @@
     flex-shrink: 0; /* Prevent shrinking, forcing items below to move down */
 }
 
-.overlay-text {
-    margin-top: 20px;
-    display: flex;
-    width: 100%;
-    flex-shrink: 0; /* Prevent shrinking, ensuring it pushes content below */
-}
-
 .query-bar-container {
     /* No positioning properties here - keeps original document flow position */
     width: auto; /* Use natural width */
@@ -89,163 +82,375 @@
 
 .query-bar-container.moved {
     left: 50%;
-    transform: translateY(40vh) translate(-12%, -50%); /* Move to bottom of viewport */
+    transform: translateY(40vh) translate(-14%, -50%); /* Move to bottom of viewport */
     z-index: 2;
 }
 
 /* Sources container */
 .sources {
-  margin: 20px 0;
-  width: 100%;
+    margin: 20px 0;
+    width: 100%;
 }
 
 .sources-card {
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background-color: rgb(39, 39, 39);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .sources-header {
-  display: flex;
-  align-items: center;
-  background-color: #e0e0e0;
-  padding: 10px 15px;
-  cursor: pointer;
-  font-weight: 600;
+    display: flex;
+    align-items: center;
+    background-color: rgb(54, 54, 54);
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 22px;
 }
 
 .sources-header .chevron-icon {
-  margin-right: 8px;
+    margin-right: 8px;
 }
 
 .sources-content {
-  padding: 15px;
+    padding: 15px;
 }
 
 /* Source items */
 .sources-list {
-  margin-bottom: 15px;
-  min-height: 50px;
+    margin-bottom: 15px;
+    min-height: 50px;
 }
 
 .source-item {
-  margin-bottom: 10px;
-  cursor: move;
+    margin-bottom: 10px;
+    cursor: move;
 }
 
 .source-item.dragging {
-  opacity: 0.5;
+    opacity: 0.5;
 }
 
 .source-card {
-  background-color: white;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+    color: white;
+    background-color: rgb(48, 48, 48);
+    border-radius: 6px;
+    box-shadow: 0px 3px 0px rgba(255, 255, 255, 0.1);
+    overflow: hidden;
 }
 
 .source-header {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: rgb(54, 54, 54);
 }
 
 .drag-handle {
-  cursor: grab;
-  color: #999;
-  margin-right: 8px;
-  display: flex;
-  align-items: center;
+    cursor: grab;
+    color: #fff;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
 }
 
 .drag-handle:active {
-  cursor: grabbing;
+    cursor: grabbing;
 }
 
 .source-title {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  flex-grow: 1;
+    font-size: 20px;
+    display: flex;
+    align-items: baseline;
+    cursor: pointer;
+    flex-grow: 1;
+    flex-wrap: wrap;
 }
 
 .source-title span {
-  margin-left: 6px;
+    margin-left: 6px;
+    
 }
 
 .delete-icon {
-  cursor: pointer;
-  color: #666;
+    cursor: pointer;
+    color: white;
 }
 
 .delete-icon:hover {
-  color: #ff0000;
+    color: #ff0000;
 }
 
 /* Source details when expanded */
 .source-details {
-  padding: 12px;
+    padding: 12px;
 }
 
 .source-field {
-  margin-bottom: 8px;
+    padding-left: 30px;
+    margin-bottom: 8px;
 }
 
 .source-field label {
-  display: block;
-  font-size: 0.85rem;
-  margin-bottom: 4px;
-  color: #555;
+    display: block;
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: white;
 }
 
 .source-field input,
 .source-field textarea {
-  width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }
 
 .source-field textarea {
-  min-height: 80px;
-  resize: vertical;
+    min-height: 80px;
+    resize: vertical;
 }
 
 /* Add source button */
 .add-source-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: #3a86ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #3a86ff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
 }
 
 .add-source-btn:hover {
-  background-color: #2a75ef;
+    background-color: #2a75ef;
 }
 
 /* Loading indicator and error message */
 .loading-indicator {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  color: #777;
-  font-style: italic;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #777;
+    font-style: italic;
 }
 
 .error-message {
-  padding: 15px;
-  color: #e53e3e;
-  background-color: #fff5f5;
+    padding: 15px;
+    color: #e53e3e;
+    background-color: #fff5f5;
+    border-radius: 6px;
+    border-left: 4px solid #e53e3e;
+    margin-bottom: 15px;
+}
+
+/* Confirmation buttons */
+.confirmation-btns-container {
+    display: flex;
+    margin-top: 50px;;
+}
+
+.confirmation-buttons {
+    position: relative;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 16px;
+    margin-top: 2rem;
+  }
+  
+  .confirm-button, .deny-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .confirm-button {
+    background-color: #38a169;
+    color: white;
+  }
+  
+  .confirm-button:hover {
+    background-color: #2f855a;
+  }
+  
+  .deny-button {
+    background-color: #e53e3e;
+    color: white;
+  }
+  
+  .deny-button:hover {
+    background-color: #c53030;
+  }
+
+  /* Phase containers */
+.phase-containers {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    /* gap: 16px; */
+    margin-bottom: 80px; /* Make room for the confirmation buttons */
+    /* max-height: 70vh; */
+    overflow-y: auto;
+    padding: 0 10px;
+}
+
+/* Phase card - general styling for all phase types */
+.phase-card {
+    background-color: rgb(39, 39, 39);
+    border-radius: 8px;
+    /* overflow: hidden; */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+}
+
+.phase-header {
+    display: flex;
+    align-items: center;
+    background-color: rgb(54, 54, 54);
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 22px;
+    color: white;
+    user-select: none;
+    border-radius: 10px;
+}
+
+.phase-header .chevron-icon {
+    margin-right: 10px;
+    color: #f0f0f0;
+    transition: transform 0.2s ease;
+}
+
+.phase-content {
+    padding: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.query-refinement-content {
+    padding: 16px;
+}
+
+.query-text {
+    color: white;
+    background-color: rgb(48, 48, 48);
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 18px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Sources specific styles */
+.sources-content {
+    padding: 16px;
+}
+
+/* Draft review specific styles */
+.draft-content {
+    padding: 16px;
+}
+
+.draft-text {
+    color: white;
+    background-color: rgb(48, 48, 48);
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 18px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* URL Input styling */
+.url-input-container {
+  margin: 16px 0;
+  background-color: rgb(48, 48, 48);
   border-radius: 6px;
-  border-left: 4px solid #e53e3e;
-  margin-bottom: 15px;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.url-input-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.url-icon {
+  color: #6b7280;
+}
+
+.url-input {
+  flex: 1;
+  background-color: rgb(60, 60, 60);
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 14px;
+  width: 100%;
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: #3a86ff;
+  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+}
+
+.url-input-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.url-cancel-btn, .url-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.url-cancel-btn {
+  background-color: rgb(70, 70, 70);
+  color: white;
+}
+
+.url-cancel-btn:hover {
+  background-color: rgb(90, 90, 90);
+}
+
+.url-add-btn {
+  background-color: #3a86ff;
+  color: white;
+}
+
+.url-add-btn:hover {
+  background-color: #2a75ef;
+}
+
+.url-cancel-btn:disabled, .url-add-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

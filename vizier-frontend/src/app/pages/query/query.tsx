@@ -1,6 +1,9 @@
-import { ReactElement, useState, useEffect } from 'react';
+import { ReactElement, useState, useEffect, useRef } from 'react';
 import { Textfit } from 'react-textfit';
-import { CircleStop, SendHorizonal, ChevronDown, ChevronRight, X, Plus, GripVertical } from 'lucide-react';
+import { 
+  CircleStop, SendHorizonal, ChevronDown, ChevronRight, 
+  X, Plus, GripVertical, Check, XCircle, Link 
+} from 'lucide-react';
 import axios from 'axios';
 import QueryBar from '../../../components/querybar/querybar';
 
@@ -9,7 +12,6 @@ import './query.css';
 // Define Source interface
 interface Source {
   id: string;
-  name: string;
   title: string;
   url: string;
   date: string;
@@ -18,26 +20,94 @@ interface Source {
   root: string;
 }
 
-// API base URL - replace with your actual API base URL when ready
+// Define Phase type
+type Phase = 'query_refinement' | 'source_refinement' | 'draft_review';
+
+// API base URL
 const API_BASE_URL = 'https://api.example.com';
 
 function Query() {
     const [searchValue, setSearchValue] = useState(''); // State to track the input value
     const [showOverlay, setOverlay] = useState(false); // State to track the expanding animation
     const [responseData, setResponseData] = useState('Please wait while we process your request.'); // State to store API response
+    const [currentPhase, setCurrentPhase] = useState<Phase>('query_refinement'); // Track the current phase
+    
+    // Collapsible states for each phase
+    const [isQueryOpen, setIsQueryOpen] = useState(true);
+    const [isSourcesOpen, setIsSourcesOpen] = useState(false);
+    const [isDraftOpen, setIsDraftOpen] = useState(false);
     
     // Sources state
     const [sources, setSources] = useState<Source[]>([]);
-    const [isSourcesOpen, setIsSourcesOpen] = useState(false);
     const [openSourceIds, setOpenSourceIds] = useState<Set<string>>(new Set());
     const [draggedItem, setDraggedItem] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
-    // Fetch sources on component mount
+    // Draft content
+    const [draftContent, setDraftContent] = useState('');
+
+    // Add new state for URL input
+    const [showUrlInput, setShowUrlInput] = useState(false);
+    const [sourceUrl, setSourceUrl] = useState('');
+    const [isAddingSource, setIsAddingSource] = useState(false);
+    const urlInputRef = useRef<HTMLInputElement>(null);
+    
+    // Effect to focus the URL input field when it appears
     useEffect(() => {
-        fetchSources();
-    }, []);
+        if (showUrlInput && urlInputRef.current) {
+            urlInputRef.current.focus();
+        }
+    }, [showUrlInput]);
+    
+    // Fetch sources on component mount or phase change
+    useEffect(() => {
+        if (currentPhase === 'source_refinement') {
+            fetchSources();
+            // Auto-collapse query section when moving to sources
+            setIsQueryOpen(false);
+            setIsSourcesOpen(true);
+        } else if (currentPhase === 'draft_review') {
+            // Auto-collapse sources section when moving to draft
+            setIsSourcesOpen(false);
+            setIsDraftOpen(true);
+            fetchDraft();
+        }
+    }, [currentPhase]);
+    
+    // Phase transition handlers
+    const handleConfirm = () => {
+        if (currentPhase === 'query_refinement') {
+            setCurrentPhase('source_refinement');
+        } else if (currentPhase === 'source_refinement') {
+            setCurrentPhase('draft_review');
+        } else if (currentPhase === 'draft_review') {
+            // Here you would typically submit the final draft
+            console.log('Final draft approved');
+            // Reset the app
+            setOverlay(false);
+            setResponseData('Please wait while we process your request.');
+            setCurrentPhase('query_refinement');
+        }
+    };
+    
+    const handleDeny = () => {
+        if (currentPhase === 'query_refinement') {
+            // Reset query refinement
+            setResponseData('Please wait while we process your request.');
+            setOverlay(false);
+        } else if (currentPhase === 'source_refinement') {
+            // Go back to query refinement
+            setCurrentPhase('query_refinement');
+            setIsQueryOpen(true);
+            setIsSourcesOpen(false);
+        } else if (currentPhase === 'draft_review') {
+            // Go back to source refinement
+            setCurrentPhase('source_refinement');
+            setIsSourcesOpen(true);
+            setIsDraftOpen(false);
+        }
+    };
     
     // Fetch sources from API
     const fetchSources = async () => {
@@ -55,8 +125,7 @@ function Query() {
             // For development - create sample sources when API fails
             setSources([
                 {
-                    id: 'source-1',
-                    name: 'Sample Source 1',
+                    id: 'id1',
                     title: 'Introduction to AI',
                     url: 'https://example.com/ai-intro',
                     date: '2025-03-15',
@@ -65,8 +134,7 @@ function Query() {
                     root: 'example.com'
                 },
                 {
-                    id: 'source-2',
-                    name: 'Sample Source 2',
+                    id: 'id2',
                     title: 'Machine Learning Fundamentals',
                     url: 'https://medium.com/ml-fundamentals',
                     date: '2025-02-28',
@@ -77,6 +145,17 @@ function Query() {
             ]);
         } finally {
             setIsLoading(false);
+        }
+    };
+    
+    // Fetch draft content
+    const fetchDraft = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/draft`);
+            setDraftContent(response.data.content);
+        } catch (error) {
+            console.error('Error fetching draft:', error);
+            setDraftContent('Based on the sources you provided, here is a draft that synthesizes the information...\n\nArtificial Intelligence (AI) has rapidly evolved in recent years, becoming increasingly integrated into various aspects of our daily lives and industries. From fundamental concepts in machine learning to advanced applications, AI represents a transformative technology with far-reaching implications.\n\nMachine learning, a core component of AI, relies on algorithms that enable systems to learn from data and improve over time without explicit programming. These principles form the foundation for more complex AI systems that can analyze information, recognize patterns, and make predictions with increasing accuracy.');
         }
     };
     
@@ -91,35 +170,45 @@ function Query() {
         setOpenSourceIds(newOpenSourceIds);
     };
     
-    const addSource = async () => {
-        const newSource: Source = {
-            id: `source-${Date.now()}`,
-            name: `Source ${sources.length + 1}`,
-            title: '',
-            url: '',
-            date: '',
-            author: '',
-            snippet: '',
-            root: '',
-        };
+    const addSource = () => {
+        // Simply show the URL input field
+        setShowUrlInput(true);
+    };
+    
+    const handleUrlSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!sourceUrl.trim()) {
+            return; // Don't submit empty URLs
+        }
+        
+        setIsAddingSource(true);
         
         try {
-            // Optimistically update UI
-            setSources([...sources, newSource]);
+            // Send only the URL to the backend
+            const response = await axios.post(`${API_BASE_URL}/process-url`, {
+                url: sourceUrl
+            });
             
-            // Make API call to add source
-            const response = await axios.post(`${API_BASE_URL}/sources`, newSource);
-            console.log('Added source:', response.data);
+            console.log('Processed URL:', response.data);
             
-            // Update with server response (it might include additional fields or normalized data)
-            const updatedSources = sources.map(s => 
-                s.id === newSource.id ? response.data : s
-            );
-            setSources([...updatedSources]);
+            // Add the processed source to our sources list
+            setSources([...sources, response.data]);
+            
+            // Reset the URL input
+            setSourceUrl('');
+            setShowUrlInput(false);
         } catch (error) {
-            console.error('Error adding source:', error);
-            // Keep the optimistic update for better UX, but show an error notification if needed
+            console.error('Error processing URL:', error);
+            // You might want to show an error message to the user
+        } finally {
+            setIsAddingSource(false);
         }
+    };
+    
+    const cancelUrlInput = () => {
+        setSourceUrl('');
+        setShowUrlInput(false);
     };
     
     const removeSource = async (sourceId: string) => {
@@ -132,7 +221,6 @@ function Query() {
             console.log('Removed source:', sourceId);
         } catch (error) {
             console.error('Error removing source:', error);
-            // Revert the optimistic update if needed
             fetchSources();
         }
     };
@@ -152,11 +240,11 @@ function Query() {
             console.log('Updated source:', updatedSource);
         } catch (error) {
             console.error('Error updating source:', error);
-            // Revert the optimistic update if needed
             fetchSources();
         }
     };
     
+    // Drag and drop handlers
     const handleDragStart = (index: number) => {
         setDraggedItem(index);
     };
@@ -186,7 +274,6 @@ function Query() {
             console.log('Updated source order:', sources.map(source => source.id));
         } catch (error) {
             console.error('Error updating source order:', error);
-            // Fetch the sources again to ensure we have the correct order from the server
             fetchSources();
         }
     };
@@ -198,6 +285,8 @@ function Query() {
         
         console.log('Send button pressed with input:', searchValue);
         setOverlay(true); // Trigger the expanding animation
+        setCurrentPhase('query_refinement');
+        setIsQueryOpen(true);
 
         // set overlay-title as query text
         const overlayTitle = document.querySelector('.overlay-title') as HTMLElement;
@@ -207,14 +296,17 @@ function Query() {
         
         try {
             // Make POST request with searchValue
-            const response = await axios.post(`${API_BASE_URL}/query`, {
+            setResponseData('Processing your query...');
+            const response = await axios.post(`${API_BASE_URL}/refine-query`, {
                 query: searchValue
             });
             
             console.log('POST response:', response.data);
             
-            // After successful POST, fetch the results
-            fetchResults(response.data.id || 'default-id');
+            // Set the refined query suggestion in the response area
+            setResponseData(response.data.refinedQuery || response.data.suggestion || 
+                            'Based on your query, here\'s what I understand you\'re looking for: information about recent advances in artificial intelligence and machine learning, with a focus on practical applications.');
+            
         } catch (error) {
             console.error('Error sending query:', error);
             setResponseData('Error processing your request. Please try again.');
@@ -222,31 +314,8 @@ function Query() {
         
         setSearchValue(''); // Clear input field
     };
-    
-    const fetchResults = async (queryId: string) => {
-        try {
-            // Simulate delay for showing loading state
-            setResponseData('Fetching results...');
-            
-            // Make GET request to fetch results
-            const response = await axios.get(`${API_BASE_URL}/results/${queryId}`);
-            
-            console.log('GET response:', response.data);
-            
-            // Update the overlay text with the response
-            setResponseData(response.data.result || 'No results found.');
-        } catch (error) {
-            console.error('Error fetching results:', error);
-            setResponseData('Error retrieving results. Please try again.');
-        }
-    };
 
     const handleStop = () => {
-        // Add this line to ensure the animation has time to complete
-        const fadeContainer = document.querySelector('.fade-container') as HTMLElement;
-        if (fadeContainer) {
-            fadeContainer.style.transition = 'all 0.5s ease-in-out';
-        }
         setOverlay(false); // Reset the overlay state when Stop is clicked
         setResponseData('Please wait while we process your request.'); // Reset response text
     };
@@ -259,6 +328,36 @@ function Query() {
         if (event.key === 'Enter') {
             handleSend(); // Trigger the send action on Enter press
         }
+    };
+    
+    // Render confirmation buttons based on current phase
+    const renderConfirmationButtons = () => {
+        let confirmText = 'Confirm';
+        let denyText = 'Deny';
+        
+        if (currentPhase === 'query_refinement') {
+            confirmText = 'Use This Query';
+            denyText = 'Cancel';
+        } else if (currentPhase === 'source_refinement') {
+            confirmText = 'Generate Draft';
+            denyText = 'Back to Query';
+        } else if (currentPhase === 'draft_review') {
+            confirmText = 'Approve Draft';
+            denyText = 'Back to Sources';
+        }
+        
+        return (
+            <div className="confirmation-buttons">
+                <button className="deny-button" onClick={handleDeny}>
+                    <XCircle size={16} />
+                    <span>{denyText}</span>
+                </button>
+                <button className="confirm-button" onClick={handleConfirm}>
+                    <Check size={16} />
+                    <span>{confirmText}</span>
+                </button>
+            </div>
+        );
     };
 
     const queryItems: [string, ReactElement][] = [
@@ -283,124 +382,193 @@ function Query() {
                     >
                         <p className="overlay-title"></p>
                     </Textfit>
-                    <div className="sources">
-                        <div className="sources-card">
+                    
+                    {/* Phase containers - always show them all but control visibility with state */}
+                    <div className="phase-containers">
+                        {/* Query Refinement Phase */}
+                        <div className="phase-card">
                             <div 
-                                className="sources-header" 
-                                onClick={() => setIsSourcesOpen(!isSourcesOpen)}
+                                className="phase-header" 
+                                onClick={() => setIsQueryOpen(!isQueryOpen)}
                             >
-                                {isSourcesOpen ? 
+                                {isQueryOpen ? 
                                     <ChevronDown size={16} className="chevron-icon" /> : 
                                     <ChevronRight size={16} className="chevron-icon" />
                                 }
-                                <span>Sources</span>
+                                <span>Query Refinement</span>
                             </div>
                             
-                            {isSourcesOpen && (
-                                <div className="sources-content">
-                                    {isLoading ? (
-                                        <div className="loading-indicator">Loading sources...</div>
-                                    ) : error ? (
-                                        <div className="error-message">{error}</div>
-                                    ) : (
-                                        <>
-                                            <div className="sources-list">
-                                                {sources.map((source, index) => (
-                                                    <div 
-                                                        key={source.id}
-                                                        className="source-item"
-                                                        draggable={true}
-                                                        onDragStart={() => handleDragStart(index)}
-                                                        onDragOver={(e) => handleDragOver(e, index)}
-                                                        onDragEnd={handleDragEnd}
-                                                    >
-                                                        <div className="source-card">
-                                                            <div className="source-header">
-                                                                <div className="drag-handle">
-                                                                    <GripVertical size={14} />
-                                                                </div>
-                                                                <div 
-                                                                    className="source-title"
-                                                                    onClick={() => toggleSourceOpen(source.id)}
-                                                                >
-                                                                    {openSourceIds.has(source.id) ? 
-                                                                        <ChevronDown size={14} /> : 
-                                                                        <ChevronRight size={14} />
-                                                                    }
-                                                                    <span>{source.name}</span>
-                                                                </div>
-                                                                <X 
-                                                                    size={14} 
-                                                                    className="delete-icon" 
-                                                                    onClick={() => removeSource(source.id)} 
-                                                                />
-                                                            </div>
-                                                            
-                                                            {openSourceIds.has(source.id) && (
-                                                                <div className="source-details">
-                                                                    <div className="source-field">
-                                                                        <label>Title:</label>
-                                                                        <input 
-                                                                            type="text"
-                                                                            value={source.title}
-                                                                            onChange={(e) => updateSource(index, 'title', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="source-field">
-                                                                        <label>URL:</label>
-                                                                        <input 
-                                                                            type="text"
-                                                                            value={source.url}
-                                                                            onChange={(e) => updateSource(index, 'url', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="source-field">
-                                                                        <label>Date:</label>
-                                                                        <input 
-                                                                            type="text"
-                                                                            value={source.date}
-                                                                            onChange={(e) => updateSource(index, 'date', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="source-field">
-                                                                        <label>Author:</label>
-                                                                        <input 
-                                                                            type="text"
-                                                                            value={source.author}
-                                                                            onChange={(e) => updateSource(index, 'author', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="source-field">
-                                                                        <label>Root:</label>
-                                                                        <input 
-                                                                            type="text"
-                                                                            value={source.root}
-                                                                            onChange={(e) => updateSource(index, 'root', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="source-field">
-                                                                        <label>Snippet:</label>
-                                                                        <textarea 
-                                                                            value={source.snippet}
-                                                                            onChange={(e) => updateSource(index, 'snippet', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <button className="add-source-btn" onClick={addSource}>
-                                                <Plus size={14} /> Add Source
-                                            </button>
-                                        </>
-                                    )}
+                            {isQueryOpen && (
+                                <div className="phase-content">
+                                    <div className="query-refinement-content">
+                                        <p className="query-text">{responseData}</p>
+                                    </div>
                                 </div>
                             )}
                         </div>
+                        
+                        {/* Source Refinement Phase - only show if we're at or past this phase */}
+                        {(currentPhase === 'source_refinement' || currentPhase === 'draft_review') && (
+                            <div className="phase-card">
+                                <div 
+                                    className="phase-header" 
+                                    onClick={() => setIsSourcesOpen(!isSourcesOpen)}
+                                >
+                                    {isSourcesOpen ? 
+                                        <ChevronDown size={16} className="chevron-icon" /> : 
+                                        <ChevronRight size={16} className="chevron-icon" />
+                                    }
+                                    <span>Sources</span>
+                                </div>
+                                
+                                {isSourcesOpen && (
+                                    <div className="phase-content">
+                                        <div className="sources-content">
+                                            {isLoading ? (
+                                                <div className="loading-indicator">Loading sources...</div>
+                                            ) : error ? (
+                                                <div className="error-message">{error}</div>
+                                            ) : (
+                                                <>
+                                                    <div className="sources-list">
+                                                        {sources.map((source, index) => (
+                                                            <div 
+                                                                key={source.id}
+                                                                className="source-item"
+                                                                draggable={true}
+                                                                onDragStart={() => handleDragStart(index)}
+                                                                onDragOver={(e) => handleDragOver(e, index)}
+                                                                onDragEnd={handleDragEnd}
+                                                            >
+                                                                <div className="source-card">
+                                                                    <div className="source-header">
+                                                                        <div className="drag-handle">
+                                                                            <GripVertical size={14} />
+                                                                        </div>
+                                                                        <div 
+                                                                            className="source-title"
+                                                                            onClick={() => toggleSourceOpen(source.id)}
+                                                                        >
+                                                                            {openSourceIds.has(source.id) ? 
+                                                                                <ChevronDown size={14} /> : 
+                                                                                <ChevronRight size={14} />
+                                                                            }
+                                                                            
+                                                                            <span>{source.title || 'Untitled Source'}</span>
+                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                                {source.root ?
+                                                                                    `| ${source.root}` : null}
+                                                                            </span>
+                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                                {source.date ?
+                                                                                    `| ${source.date}` : null}
+                                                                            </span>
+
+                                                                        </div>
+                                                                        <X 
+                                                                            size={14} 
+                                                                            className="delete-icon" 
+                                                                            onClick={() => removeSource(source.id)} 
+                                                                        />
+                                                                    </div>
+                                                                    
+                                                                    {openSourceIds.has(source.id) && (
+                                                                        <div className="source-details">
+                                                                            <div className="source-field">
+                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                                    {source.url ? `${source.url} | ` : null}
+                                                                                </span>
+                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                                    {source.author ? `by ${source.author}` : null}
+                                                                                </span>
+                                                                                
+                                                                            </div>
+                                                                           
+                                                                        
+                                                                            <div className="source-field">
+                                                                                <label>{source.snippet}</label>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    
+                                                    {/* URL Input Field (conditionally rendered) */}
+                                                    {showUrlInput ? (
+                                                        <div className="url-input-container">
+                                                            <form onSubmit={handleUrlSubmit}>
+                                                                <div className="url-input-field">
+                                                                    <Link size={16} className="url-icon" />
+                                                                    <input 
+                                                                        type="url"
+                                                                        ref={urlInputRef}
+                                                                        placeholder="Enter URL to source..."
+                                                                        value={sourceUrl}
+                                                                        onChange={(e) => setSourceUrl(e.target.value)}
+                                                                        className="url-input"
+                                                                    />
+                                                                    <div className="url-input-actions">
+                                                                        <button 
+                                                                            type="button"
+                                                                            className="url-cancel-btn"
+                                                                            onClick={cancelUrlInput}
+                                                                            disabled={isAddingSource}
+                                                                        >
+                                                                            <X size={16} />
+                                                                        </button>
+                                                                        <button 
+                                                                            type="submit"
+                                                                            className="url-add-btn"
+                                                                            disabled={isAddingSource}
+                                                                        >
+                                                                            {isAddingSource ? 'Processing...' : 'Add'}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    ) : (
+                                                        <button className="add-source-btn" onClick={addSource}>
+                                                            <Plus size={14} /> Add Source
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
+                        {/* Draft Review Phase - only show if we're at this phase */}
+                        {currentPhase === 'draft_review' && (
+                            <div className="phase-card">
+                                <div 
+                                    className="phase-header" 
+                                    onClick={() => setIsDraftOpen(!isDraftOpen)}
+                                >
+                                    {isDraftOpen ? 
+                                        <ChevronDown size={16} className="chevron-icon" /> : 
+                                        <ChevronRight size={16} className="chevron-icon" />
+                                    }
+                                    <span>Draft</span>
+                                </div>
+                                
+                                {isDraftOpen && (
+                                    <div className="phase-content">
+                                        <div className="draft-content">
+                                            <p className="draft-text">{draftContent}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <p className="overlay-text">{responseData}</p>
+                    
+                    {/* Confirmation buttons */}
+                    {renderConfirmationButtons()}
                 </div>
             </div>
 
