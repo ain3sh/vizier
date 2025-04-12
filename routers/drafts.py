@@ -4,6 +4,7 @@ from jose import jwt
 import os
 import uuid
 from uuid import UUID
+import json
 
 router = APIRouter(prefix="/drafts", tags=["drafts"])
 
@@ -29,21 +30,36 @@ async def generate_draft(data: dict, request: Request):
     if not query_id:
         raise HTTPException(status_code=400, detail="query_id is required")
 
+    # 🔍 fetch source_set_id from query
+    source_row = await database.fetch_one("""
+        SELECT q.source_set_id, s.sources
+        FROM queries q
+        JOIN source_sets s ON q.source_set_id = s.source_set_id
+        WHERE q.query_id = :query_id AND q.user_id = :user_id
+    """, {
+        "query_id": query_id,
+        "user_id": user_id
+    })
+
+    if not source_row:
+        raise HTTPException(status_code=404, detail="No sources found for this query")
+
+    source_set_id = source_row["source_set_id"]
+
     draft_id = str(uuid.uuid4())
     dummy_content = f"This is a draft summary for query {query_id}."
-    dummy_sources = "https://source1.com, https://source2.com"
 
     insert_query = """
-    INSERT INTO drafts (draft_id, query_id, user_id, content, sources, status, created_at)
-    VALUES (:draft_id, :query_id, :user_id, :content, :sources, 'generated', NOW())
+    INSERT INTO drafts (draft_id, query_id, user_id, source_set_id, content, status, created_at)
+    VALUES (:draft_id, :query_id, :user_id, :source_set_id, :content, 'generated', NOW())
     """
 
     await database.execute(insert_query, {
         "draft_id": draft_id,
         "query_id": query_id,
         "user_id": user_id,
-        "content": dummy_content,
-        "sources": dummy_sources
+        "source_set_id": source_set_id,
+        "content": dummy_content
     })
 
     return {"draft_id": draft_id, "status": "generated"}
@@ -61,7 +77,7 @@ async def accept_draft(data: dict, request: Request):
     WHERE draft_id = :draft_id AND user_id = :user_id
     """
 
-    result = await database.execute(update_query, {
+    await database.execute(update_query, {
         "draft_id": draft_id,
         "user_id": user_id
     })
@@ -81,7 +97,7 @@ async def reject_draft(data: dict, request: Request):
     WHERE draft_id = :draft_id AND user_id = :user_id
     """
 
-    result = await database.execute(update_query, {
+    await database.execute(update_query, {
         "draft_id": draft_id,
         "user_id": user_id
     })

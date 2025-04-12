@@ -4,6 +4,8 @@ from jose import jwt
 import os
 from uuid import UUID 
 import uuid 
+from refiner import UserBackground, QueryRequest, QueryResponse, refine_query as run_refinement
+import json
 
 router = APIRouter(prefix="/queries", tags=["queries"])
 
@@ -103,9 +105,71 @@ async def reject_query(query_id: str, request: Request):
 
     return {"message": "Query marked as rejected"}
 
+#return the source list for that query id
+@router.get("/{query_id}/sources")
+async def get_query_sources(query_id: str, request: Request):
+    user_id = get_current_user(request)
+
+    row = await database.fetch_one("""
+        SELECT s.sources
+        FROM queries q
+        JOIN source_sets s ON q.source_set_id = s.source_set_id
+        WHERE q.query_id = :query_id AND q.user_id = :user_id
+    """, {
+        "query_id": query_id,
+        "user_id": user_id
+    })
+
+    if not row:
+        raise HTTPException(status_code=404, detail="No sources found")
+
+    return row["sources"]
+
+#attach a source set to query
+@router.post("/{query_id}/attach-source-set")
+async def attach_source_set(query_id: str, data: dict, request: Request):
+    user_id = get_current_user(request)
+    source_set_id = data.get("source_set_id")
+
+    if not source_set_id:
+        raise HTTPException(status_code=400, detail="Missing source_set_id")
+
+    await database.execute("""
+        UPDATE queries
+        SET source_set_id = :source_set_id
+        WHERE query_id = :query_id AND user_id = :user_id
+    """, {
+        "source_set_id": source_set_id,
+        "query_id": query_id,
+        "user_id": user_id
+    })
+
+    return { "message": "Source set attached" }
+
+#create new source-set 
+@router.post("/source-sets")
+async def create_source_set(data: dict, request: Request):
+    user_id = get_current_user(request)
+    source_set_id = str(uuid.uuid4())
+    sources = data.get("sources")
+
+    if not isinstance(sources, list):
+        raise HTTPException(status_code=400, detail="sources must be a list of objects")
+
+    insert_query = """
+    INSERT INTO source_sets (source_set_id, sources)
+    VALUES (:source_set_id, :sources)
+    """
+
+    await database.execute(insert_query, {
+        "source_set_id": source_set_id,
+        "sources": json.dumps(sources)
+    })
+
+    return {"source_set_id": source_set_id}
+
 
 #refine given query based on given feedback 
-
 @router.post("/{query_id}/refine")
 async def start_refinement(query_id: str, data: dict, request: Request):
     user_id = get_current_user(request)
@@ -134,4 +198,14 @@ async def start_refinement(query_id: str, data: dict, request: Request):
 
     request_obj = QueryRequest(query=current_query, background=UserBackground(**background_data))
     response = await run_refinement(request_obj)
-    return response.dict()
+
+    await database.execute("""
+        UPDATE queries SET refined_query = :refined_query
+        WHERE query_id = :query_id AND user_id = :user_id
+    """, {
+        "refined_query": response.refined_query,
+        "query_id": query_id,
+        "user_id": user_id
+    })
+
+    return {"refined_query": response.refined_query}
