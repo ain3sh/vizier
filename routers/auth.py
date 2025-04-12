@@ -4,6 +4,7 @@ from jose import jwt
 from httpx import AsyncClient
 import os
 import uuid
+from uuid import UUID
 from dotenv import load_dotenv
 from database import database
 
@@ -90,7 +91,7 @@ async def google_auth_callback(code: str):
         user_id = user["user_id"]
 
     print("🔐 Step 5: Issuing JWT for user:", user_id)
-    token = jwt.encode({"sub": user_id}, JWT_SECRET, algorithm="HS256")
+    token = jwt.encode({"sub": str(user_id)}, JWT_SECRET, algorithm="HS256")
 
     print("🎉 Step 6: Returning JWT to client")
     return {"access_token": token}
@@ -104,7 +105,7 @@ async def get_me(request: Request):
     try:
         token = auth_header.split(" ")[1]
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        return {"user_id": payload["sub"]}
+        return {"user_id": UUID(payload["sub"])}
     except Exception as e:
         print("❌ Invalid token:", e)
         raise HTTPException(status_code=401, detail="Invalid token")
