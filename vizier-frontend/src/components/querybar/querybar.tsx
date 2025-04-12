@@ -11,7 +11,6 @@ const QueryBar: React.FC<QueryBarProps> = ({ li }) => {
             {li.map((item, index) => (
                 <div className="querybar-item" key={index}>
                     {item[1]} {/* Render the icon */}
-                    <span>{item[0]}</span> {/* Render the label (hidden by CSS) */}
                 </div>
             ))}
         </div>

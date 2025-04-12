@@ -2,21 +2,15 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
-    border: 2px solid #ccc; /* Add a border around the container */
-    border-radius: 15px; /* Optional: Add rounded corners */
+    border: 3px solid #666666;
+    border-radius: 30px;
+    padding: 10px;
 }
 
 .querybar-item {
-    padding: 5px 10px; /* Add padding around each item */
-    text-align: center; /* Center text inside each item */
-    font-size: 1rem; /* Adjust font size */
-    color: #333; /* Text color */
-    display: flex; /* Ensure the item layout remains intact */
-    align-items: center; /* Center content vertically */
-    justify-content: center; /* Center content horizontally */
-    padding: 5px 10px;
-}
-
-.querybar-item span {
-    display: none; /* Hide the label (text) */
+    /* padding: 0; */
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
