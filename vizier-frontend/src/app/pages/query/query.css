@@ -170,6 +170,7 @@
 
 .drag-handle:active {
     cursor: grabbing;
+    color: rgb(0, 168, 76);
 }
 
 .source-title {
@@ -192,7 +193,7 @@
 }
 
 .delete-icon:hover {
-    color: #ff0000;
+    color: #fc6969;
 }
 
 /* Source details when expanded */
@@ -230,17 +231,18 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background-color: #3a86ff;
-    color: white;
+    background-color: rgb(70, 70, 70);
+    color: rgb(0, 168, 76);
     border: none;
     border-radius: 4px;
     padding: 8px 12px;
     cursor: pointer;
     font-size: 14px;
+    transition: background-color 0.3s ease; 
 }
 
 .add-source-btn:hover {
-    background-color: #2a75ef;
+    background-color: rgb(56, 56, 56);
 }
 
 /* Loading indicator and error message */
@@ -279,7 +281,7 @@
     margin-top: 0; /* Remove margin-top since it's no longer needed */
 }
   
-  .confirm-button, .deny-button {
+.confirm-button, .deny-button {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -288,32 +290,55 @@
     font-size: 1rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
-    border: none;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
+    transition: background-color 0.2s ease, color 0.2s ease;
+    background-color: transparent; /* Match the window background */
+    border: 2px solid; /* Add border */
+    box-shadow: none; /* Remove shadow for simplicity */
+    outline: none; /* Remove focus outline */
+}
   
-  .confirm-button {
-    background-color: #38a169;
-    color: white;
-  }
+.confirm-button {
+    color: #38a169; /* Green text */
+    border-color: #38a169; /* Green border */
+}
   
-  .confirm-button:hover {
-    background-color: #2f855a;
-  }
+.confirm-button:hover, .confirm-button:focus {
+    background-color: rgba(56, 161, 105, 0.1); /* Subtle green background on hover */
+    border-color: #38a169; /* Keep the same border color when focused */
+    color: #38a169; /* Keep text color consistent */
+}
   
-  .deny-button {
-    background-color: #e53e3e;
-    color: white;
-  }
+.confirm-button:active {
+    background-color: rgba(56, 161, 105, 0.2); /* Slightly darker green background on click */
+    color: #38a169; /* Ensure text color remains consistent */
+    border-color: #38a169; /* Keep border color consistent */
+}
   
-  .deny-button:hover {
-    background-color: #c53030;
-  }
+.deny-button {
+    color: #e53e3e; /* Red text */
+    border-color: #e53e3e; /* Red border */
+}
+  
+.deny-button:hover, .deny-button:focus {
+    background-color: rgba(229, 62, 62, 0.1); /* Subtle red background on hover */
+    border-color: #e53e3e; /* Keep the same border color when focused */
+    color: #e53e3e; /* Keep text color consistent */
+}
+  
+.deny-button:active {
+    background-color: rgba(229, 62, 62, 0.2); /* Slightly darker red background on click */
+    color: #e53e3e; /* Ensure text color remains consistent */
+    border-color: #e53e3e; /* Keep border color consistent */
+}
 
-  /* Phase containers */
+.deny-button:checked {
+    background-color: rgb(54, 54, 54); /* Subtle red background on hover */
+    border-color: #1a1a1a;
+}
+
+/* Phase containers */
 .phase-containers {
-    max-width: 800px;
+    max-width: 1200px;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -413,7 +438,7 @@
 .url-input {
   flex: 1;
   background-color: rgb(60, 60, 60);
-  border: 1px solid #4b5563;
+  border: 1px solid #4d4d4d;
   border-radius: 4px;
   padding: 8px 12px;
   color: white;
@@ -423,7 +448,7 @@
 
 .url-input:focus {
   outline: none;
-  border-color: #3a86ff;
+  border-color: rgb(0, 168, 76);
   box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
 }
 
@@ -454,12 +479,18 @@
 }
 
 .url-add-btn {
-  background-color: #3a86ff;
-  color: white;
+  background-color: rgb(70, 70, 70);
+  color: rgb(0, 168, 76);
+  border: rgb(0, 168, 76);
+  border-style: solid;
+  border-width: 2px;
+  transition: background-color 0.3s ease;
 }
 
 .url-add-btn:hover {
-  background-color: #2a75ef;
+  background-color: rgb(56, 56, 56);
+  border-color: rgb(0, 168, 76);
+  border-width: 2px;
 }
 
 .url-cancel-btn:disabled, .url-add-btn:disabled {

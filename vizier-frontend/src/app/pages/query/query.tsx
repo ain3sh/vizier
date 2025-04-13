@@ -432,9 +432,7 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                     <div>
                         <h3 className="query-title">{refinedQuery || ''}</h3>
                         <div className="phase-card">
-                            <div className="phase-header">
-                                <span>Query Refinement</span>
-                            </div>
+                        
                             <div className="phase-content">
                                 <div className="query-refinement-content">
                                     <p className="query-text">{responseData}</p>
