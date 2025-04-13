@@ -1,5 +1,4 @@
 import { ReactElement, useState, useEffect, useRef } from 'react';
-import { Textfit } from 'react-textfit';
 import { 
   SendHorizonal, ChevronDown, ChevronRight, 
   X, Plus, GripVertical, Check, XCircle, Link 
@@ -426,18 +425,9 @@ Suggested query: "${searchValue} with recent developments and practical applicat
             {/* Overlay container */}
             <div className={`fade-container ${showOverlay ? 'overlay' : ''}`}>
                 <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>
-                    <Textfit 
-                        mode="multi"
-                        min={12}
-                        max={48}
-                        style={{
-                            height: '100%',
-                            width: '80%',
-                        }}
-                    >
-                        <p className="overlay-title"></p>
-                    </Textfit>
-                    
+                    <div className="overlay-title-container">
+                        <h3 className="overlay-title"></h3>
+                    </div>
                     {/* Phase containers - always show them all but control visibility with state */}
                     <div className="phase-containers">
                         {/* Query Refinement Phase */}
@@ -642,9 +632,9 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                         )}
                     </div>
                     
-                    {/* Confirmation buttons */}
-                    {renderConfirmationButtons()}
                 </div>
+                {/* Confirmation buttons */}
+                {renderConfirmationButtons()}
             </div>
 
             {/* QueryBar container */}
