@@ -1,7 +1,7 @@
 import { ReactElement, useState, useEffect, useRef } from 'react';
 import { 
   SendHorizonal, ChevronDown, ChevronRight, 
-  X, Plus, GripVertical, Check, XCircle, Link 
+  Trash2, Plus, GripVertical, Check, XCircle, Link 
 } from 'lucide-react';
 import axios from 'axios';
 import QueryBar from '../../../components/querybar/querybar';
@@ -408,8 +408,7 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                     {phases.map((phase, index) => (
                         <div 
                             key={phase}
-                            className={`phase-step ${currentIndex >= index ? 'active' : ''} 
-                                       ${currentIndex === index ? 'current' : ''}`}
+                            className={`phase-step ${currentIndex === index ? 'active' : ''}`}
                         >
                             {phase}
                         </div>
@@ -514,7 +513,7 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                                                                             `| ${source.date}` : null}
                                                                     </span>
                                                                 </div>
-                                                                <X 
+                                                                <Trash2 
                                                                     size={14} 
                                                                     className="delete-icon" 
                                                                     onClick={() => removeSource(source.id)} 
@@ -562,7 +561,7 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                                                                     onClick={cancelUrlInput}
                                                                     disabled={isAddingSource}
                                                                 >
-                                                                    <X size={16} />
+                                                                    <Trash2 size={16} />
                                                                 </button>
                                                                 <button 
                                                                     type="submit"
