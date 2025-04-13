@@ -13,8 +13,8 @@ createRoot(document.getElementById('root')!).render(
             <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/login/success" element={<AuthCallback />} />
-                {/* <Route path="/*" element={<App />} /> */}
-                <Route path="/" element={<OnBoarding/>}/>
+                <Route path="/*" element={<App />} />
+                {/* <Route path="/" element={<OnBoarding/>}/> */}
             </Routes>
         </BrowserRouter>
     </StrictMode>,
