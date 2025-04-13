@@ -6,7 +6,6 @@
 }
 
 body {
-    background-color: #1a1a1a;
     color: #fff;
     font-family: Roboto, sans-serif;
     /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; */
@@ -83,6 +82,7 @@ body {
 
 /* Main content styles */
 .main-content {
+    background-color: #1a1a1a;
     flex: 1;
     display: flex;
     justify-content: center;
