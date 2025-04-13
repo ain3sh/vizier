@@ -94,7 +94,10 @@ async def google_auth_callback(code: str):
     token = jwt.encode({"sub": str(user_id)}, JWT_SECRET, algorithm="HS256")
 
     print("🎉 Step 6: Returning JWT to client")
-    return {"access_token": token}
+    #return {"access_token": token}
+    print(token)
+    return RedirectResponse(f"http://localhost:5173/login/success?token={token}")
+    #change this to redirect response    
 
 
 @router.get("/me")
