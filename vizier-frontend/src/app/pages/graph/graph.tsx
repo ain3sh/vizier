@@ -1,42 +1,77 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { ReactFlow, Background, Controls, useNodesState, useEdgesState } from '@xyflow/react';
+import { useState, useEffect, useCallback } from 'react';
+import { ReactFlow, useNodesState, useEdgesState, Node, Edge } from '@xyflow/react';
+import { useNavigate } from 'react-router-dom';
 
 import '@xyflow/react/dist/style.css';
 import './graph.css';
 
+interface NodeData extends Record<string, unknown> {
+  label?: string;
+}
+
+type NodeType = Node<NodeData>;
+type EdgeType = Edge;
+
+interface NodeDefinition {
+  id: string;
+  data: NodeData;
+  position: { x: number; y: number };
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+interface SimulationStep {
+  addNodes: string[];
+  addEdges?: string[];
+  activeNode: string | null;
+  markFailed?: string[];
+}
+
 const agents = ['agent-1', 'agent-2', 'agent-3', 'agent-4'];
 const steps = ['A', 'B', 'C', 'D'];
 
-const allNodesData = [
-  { id: 'query-root', data: {}, position: { x: 400, y: 50 } },
+const allNodesData: NodeDefinition[] = [
+  { id: 'initial-node', data: { label: 'Start' }, position: { x: 400, y: 0 } },
+  { id: 'query-root', data: { label: 'Query' }, position: { x: 400, y: 200 } },
   ...agents.flatMap((agentId, i) => {
     const x = 150 + i * 250;
     return [
-      { id: agentId, data: {}, position: { x, y: 150 } },
+      { id: agentId, data: { label: agentId }, position: { x, y: 400 } },
       ...steps.map((step, j) => ({
         id: `${agentId}-${step}`,
-        data: {},
-        position: { x, y: 250 + j * 200 },
+        data: { label: `${step}` },
+        position: { x, y: 600 + j * 200 },
       })),
     ];
   }),
 ];
 
-const allEdgesData = [
-  ...agents.map(agentId => ({ id: `query-${agentId}`, source: 'query-root', target: agentId })),
+const allEdgesData: EdgeType[] = [
+  { id: 'initial-to-query', source: 'initial-node', target: 'query-root', type: 'default' },
+  ...agents.map(agentId => ({ 
+    id: `query-${agentId}`, 
+    source: 'query-root', 
+    target: agentId, 
+    type: 'default' 
+  })),
   ...agents.flatMap(agentId => (
     steps.slice(0, -1).map((step, i) => ({
       id: `${agentId}-${step}-${steps[i + 1]}`,
       source: `${agentId}-${step}`,
       target: `${agentId}-${steps[i + 1]}`,
+      type: 'default'
     })).concat({
-      id: `${agentId}-link`, source: agentId, target: `${agentId}-A`
+      id: `${agentId}-link`, 
+      source: agentId, 
+      target: `${agentId}-A`, 
+      type: 'default'
     })
   )),
 ];
 
-const simulationSteps = [
-  { addNodes: ['query-root'], addEdges: [], activeNode: 'query-root' },
+const simulationSteps: SimulationStep[] = [
+  { addNodes: ['initial-node'], addEdges: [], activeNode: 'initial-node' },
+  { addNodes: ['query-root'], addEdges: ['initial-to-query'], activeNode: 'query-root' },
   { addNodes: agents, addEdges: agents.map(a => `query-${a}`), activeNode: null },
   { addNodes: ['agent-2-A'], addEdges: ['agent-2-link'], activeNode: 'agent-2-A' },
   { addNodes: ['agent-4-A'], addEdges: ['agent-4-link'], activeNode: 'agent-4-A' },
@@ -55,103 +90,128 @@ const simulationSteps = [
 ];
 
 function AgentFlowGraph() {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const navigate = useNavigate();
+  const [nodes, setNodes, onNodesChange] = useNodesState([] as NodeType[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as EdgeType[]);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
 
-  const applyTemporaryClass = useCallback((ids, type, className, duration = 1500) => {
-    const update = type === 'node' ? setNodes : setEdges;
-    update(elements => elements.map(el => ids.includes(el.id) ? { ...el, className: `${el.className || ''} ${className}`.trim() } : el));
-    setTimeout(() => {
-      update(elements => elements.map(el => ids.includes(el.id) ? { ...el, className: (el.className || '').replace(className, '').trim() } : el));
-    }, duration);
+  const applyTemporaryClass = useCallback((ids: string[], type: 'node' | 'edge', className: string, duration = 1500) => {
+    if (type === 'node') {
+      setNodes(elements => 
+        elements.map(el => ids.includes(el.id) ? 
+          { ...el, className: `${el.className || ''} ${className}`.trim() } : el
+        )
+      );
+      setTimeout(() => {
+        setNodes(elements => 
+          elements.map(el => ids.includes(el.id) ? 
+            { ...el, className: (el.className || '').replace(className, '').trim() } : el
+          )
+        );
+      }, duration);
+    } else {
+      setEdges(elements => 
+        elements.map(el => ids.includes(el.id) ? 
+          { ...el, className: `${el.className || ''} ${className}`.trim() } : el
+        )
+      );
+      setTimeout(() => {
+        setEdges(elements => 
+          elements.map(el => ids.includes(el.id) ? 
+            { ...el, className: (el.className || '').replace(className, '').trim() } : el
+          )
+        );
+      }, duration);
+    }
   }, [setNodes, setEdges]);
 
-  useEffect(() => {
-    if (currentStepIndex >= simulationSteps.length) return;
+  const stepSimulation = useCallback(() => {
+    if (currentStepIndex >= simulationSteps.length - 1) return;
+    const nextStepIndex = currentStepIndex + 1;
+    const step = simulationSteps[nextStepIndex];
 
-    const timer = setTimeout(() => {
-      if (currentStepIndex < 0) {
-        setCurrentStepIndex(0);
-        return;
-      }
+    if (step.markFailed) {
+      setNodes((prev: NodeType[]) => prev.map(n => step.markFailed!.includes(n.id)
+        ? { ...n, style: { ...n.style, background: '#444', borderColor: '#999', borderRadius: '999px' } }
+        : n
+      ));
+      setCurrentStepIndex(nextStepIndex);
+      return;
+    }
 
-      const step = simulationSteps[currentStepIndex];
+    const newNodes = (step.addNodes || [])
+      .map(id => allNodesData.find(n => n.id === id))
+      .filter(Boolean)
+      .map(n => ({ ...n, type: 'default' } as NodeType));
 
-      if (step.markFailed) {
-        setNodes(prev => prev.map(n => step.markFailed.includes(n.id)
-          ? { ...n, style: { background: '#444', borderColor: '#999', borderRadius: '999px' } }
-          : n
-        ));
-        setCurrentStepIndex(i => i + 1);
-        return;
-      }
+    const newEdges = (step.addEdges || [])
+      .map(id => allEdgesData.find(e => e.id === id))
+      .filter(Boolean) as EdgeType[];
 
-      const newNodes = (step.addNodes || []).map(id => allNodesData.find(n => n.id === id)).filter(Boolean);
-      const newEdges = (step.addEdges || []).map(id => allEdgesData.find(e => e.id === id)).filter(Boolean);
+    setNodes((prev: NodeType[]) => {
+      const updated = prev.map(n => ({
+        ...n,
+        className: (n.className || '').replace('node-pulsing', '').trim(),
+        style: { ...n.style, borderRadius: '999px' },
+      }));
 
-      setNodes(prev => {
-        const updated = prev.map(n => ({
-          ...n,
-          className: (n.className || '').replace('node-pulsing', '').trim(),
-          style: { ...n.style, borderRadius: '999px' },
-        }));
+      const active = updated.find(n => n.id === step.activeNode);
+      const others = updated.filter(n => n.id !== step.activeNode);
 
-        const active = updated.find(n => n.id === step.activeNode);
-        const others = updated.filter(n => n.id !== step.activeNode);
+      const activeNode = active ? {
+        ...active,
+        className: `${active.className || ''} node-pulsing`.trim(),
+        style: {
+          ...(active.style || {}),
+          background: 'rgb(0, 168, 76)',
+          borderColor: 'rgb(0, 168, 76)',
+          borderRadius: '999px'
+        }
+      } : null;
 
-        const activeNode = active ? {
-          ...active,
-          className: `${active.className || ''} node-pulsing`.trim(),
-          style: {
-            ...(active.style || {}),
-            background: 'rgb(0, 168, 76)',
-            borderColor: 'rgb(0, 168, 76)',
-            borderRadius: '999px'
-          }
-        } : null;
+      return [...others, ...(activeNode ? [activeNode] : []), ...newNodes];
+    });
 
-        const added = newNodes.map(n => ({
-          ...n,
-          className: n.id === step.activeNode ? 'node-pulsing' : '',
-          style: { borderRadius: '999px' }
-        }));
+    setEdges((prev: EdgeType[]) => {
+      const newUnique = newEdges.filter(e => !prev.some(pe => pe.id === e.id));
+      const newSources = newUnique.map(e => e.source);
 
-        return [...others, ...(activeNode ? [activeNode] : []), ...added];
-      });
-
-      setEdges(prev => {
-        const newUnique = newEdges.filter(e => !prev.some(pe => pe.id === e.id));
-        const newSources = newUnique.map(e => e.source);
-
-        setNodes(nodes => nodes.map(n =>
+      setNodes((nodes: NodeType[]) => nodes.map(n =>
         newSources.includes(n.id)
-            ? {
-                ...n,
-                className: (n.className || '').replace('node-pulsing', '').trim(),
-                style: {
+          ? {
+              ...n,
+              className: (n.className || '').replace('node-pulsing', '').trim(),
+              style: {
                 ...(n.style || {}),
                 background: '#e5e7eb',
                 borderColor: '#d1d5db',
-                }
+              }
             }
-            : n
-        ));
+          : n
+      ));
 
-        return [...prev, ...newUnique];
-      });
+      return [...prev, ...newUnique];
+    });
 
-      if ((step.addNodes || []).length > 0) applyTemporaryClass(step.addNodes, 'node', 'node-glowing', 3000);
-      if ((step.addEdges || []).length > 0) applyTemporaryClass(step.addEdges, 'edge', 'edge-glowing', 4000);
+    if (step.addNodes.length > 0) applyTemporaryClass(step.addNodes, 'node', 'node-glowing', 3000);
+    if (step.addEdges && step.addEdges.length > 0) {
+      applyTemporaryClass(step.addEdges, 'edge', 'edge-glowing', 4000);
+    }
 
-      setCurrentStepIndex(i => i + 1);
-    }, 3000);
+    setCurrentStepIndex(nextStepIndex);
+  }, [currentStepIndex, applyTemporaryClass, setNodes, setEdges]);
 
-    return () => clearTimeout(timer);
-  }, [currentStepIndex, applyTemporaryClass]);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') stepSimulation();
+      if (e.key.toLowerCase() === 'q') navigate('/');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stepSimulation, navigate]);
 
   return (
-    <div style={{ width: '100%', height: '100vh' }}>
+    <div style={{ width: '100vw', height: '100vh' }}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -160,8 +220,6 @@ function AgentFlowGraph() {
         fitView
         fitViewOptions={{ padding: 0.2 }}
       >
-        <Controls />
-        <Background color="#000000" variant="lines" />
       </ReactFlow>
     </div>
   );
