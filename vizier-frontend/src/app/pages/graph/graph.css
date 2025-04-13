@@ -1,0 +1,72 @@
+html, body, #root {
+    background-color: black !important;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 168, 76, 0.7); transform: scale(1); }
+    70% { box-shadow: 0 0 15px 20px rgba(0, 168, 76, 0); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 168, 76, 0); transform: scale(1); }
+  }
+  
+  .node-pulsing {
+    animation: pulse 10s infinite ease-out;
+    border-color: rgb(0, 168, 76);
+    box-shadow: 0 0 14px rgb(0, 168, 76);
+  }
+  
+  @keyframes glow-node {
+    0% { box-shadow: 0 0 10px 10px rgba(0, 255, 200, 0.6); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 200, 0); }
+  }
+  
+  .node-glowing {
+    animation: glow-node 3s ease-out;
+    border-color: #00ffd5;
+  }
+  
+  @keyframes draw-line {
+    to { stroke-dashoffset: 0; }
+  }
+  
+  .edge-glowing .react-flow__edge-path {
+    stroke: rgb(0, 168, 76); /* emerald green */
+    stroke-width: 3px;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 6px rgb(0, 168, 76));
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: draw-line 1.8s forwards ease-out;
+  }
+  
+  .react-flow__edge-path {
+    stroke: rgb(183, 228, 203); /* emerald default too */
+    stroke-width: 2px;
+    transition: stroke 0.3s ease, stroke-width 0.3s ease;
+  }
+  
+  .react-flow__node-default,
+  .react-flow__node-input,
+  .react-flow__node-output {
+    width: 50px;
+    height: 50px;
+    border-radius: 50% !important;
+    background-color: rgb(0, 168, 76);
+    border: 2px solid rgb(0, 168, 76);
+    box-shadow: 0 0 6px rgb(0, 168, 76);
+    padding: 0;
+    font-size: 0;
+    transition: all 0.4s ease;
+  }
+  
+  .react-flow__node:not(.node-pulsing):not(.node-glowing) {
+    animation: none;
+    box-shadow: none;
+  }
+  
+  .react-flow__edge:not(.edge-glowing) .react-flow__edge-path {
+    animation: none;
+  }
+  
