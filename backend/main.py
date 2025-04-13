@@ -1,14 +1,11 @@
 from fastapi import FastAPI
-from routers import auth, user, queries,drafts
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from sse_starlette.sse import EventSourceResponse
+from routers import auth, user, queries, drafts
 from database import register_lifespan_events
 
-from fastapi.middleware.cors import CORSMiddleware
-
-
-
 app = FastAPI()
-
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -19,6 +16,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],     # includes Authorization
 )
+
+# Global process state tracker
+process_states = {}
 
 register_lifespan_events(app)
 app.include_router(auth.router)
