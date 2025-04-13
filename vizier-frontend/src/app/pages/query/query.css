@@ -117,11 +117,6 @@
 }
 
 .sources-content {
-    border-radius: 8px; /* Reduced border radius */
-    border-width: 1px;
-    border-color: rgb(48, 48, 48);
-    border-style: solid;
-    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
     padding: 16px;
 }
 
