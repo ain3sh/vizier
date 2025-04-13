@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ReactFlow, useNodesState, useEdgesState, Node, Edge } from '@xyflow/react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ReactFlow, useNodesState, useEdgesState, Node, Edge, ReactFlowInstance } from '@xyflow/react';
 import { useNavigate } from 'react-router-dom';
 
 import '@xyflow/react/dist/style.css';
@@ -94,6 +94,7 @@ function AgentFlowGraph() {
   const [nodes, setNodes, onNodesChange] = useNodesState([] as NodeType[]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([] as EdgeType[]);
   const [currentStepIndex, setCurrentStepIndex] = useState(-1);
+  const flowRef = useRef<ReactFlowInstance | null>(null);
 
   const applyTemporaryClass = useCallback((ids: string[], type: 'node' | 'edge', className: string, duration = 1500) => {
     if (type === 'node') {
@@ -199,6 +200,11 @@ function AgentFlowGraph() {
     }
 
     setCurrentStepIndex(nextStepIndex);
+
+    // Add a small delay to let the nodes render before fitting the view
+    setTimeout(() => {
+      flowRef.current?.fitView({ duration: 800, padding: 0.2 });
+    }, 100);
   }, [currentStepIndex, applyTemporaryClass, setNodes, setEdges]);
 
   useEffect(() => {
@@ -219,6 +225,10 @@ function AgentFlowGraph() {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onInit={(instance) => {
+          flowRef.current = instance;
+          instance.fitView({ padding: 0.2 });
+        }}
         fitView
         fitViewOptions={{ padding: 0.2 }}
       >
