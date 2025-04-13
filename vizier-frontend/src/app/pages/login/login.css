@@ -3,19 +3,19 @@
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #111827; /* Dark background */
+    background-color: #111827; /* Match main dark bg */
     color: white;
     font-family: 'Inter', sans-serif;
   }
   
   .login-card {
-    background-color: #1f2937; /* Darker gray card */
+    background-color: #1f2937; /* same as other dark cards */
     padding: 3rem 4rem;
-    border-radius: 1rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     text-align: center;
-    max-width: 400px;
     width: 90%;
+    max-width: 400px;
   }
   
   .login-title {
@@ -26,26 +26,26 @@
   
   .login-subtitle {
     font-size: 1rem;
-    color: #d1d5db; /* Tailwind gray-300 */
+    color: #d1d5db; /* gray-300 */
     margin-bottom: 2rem;
   }
   
   .login-btn {
-    display: inline-block;
-    background-color: #3b82f6; /* Tailwind blue-500 */
+    background-color: #3a86ff; /* match send-btn */
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 10px 20px;
     font-size: 1rem;
-    border-radius: 9999px;
+    border-radius: 12px;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
-    text-decoration: none;
     font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
   }
   
   .login-btn:hover {
-    background-color: #2563eb; /* Tailwind blue-600 */
+    background-color: #2a75ef;
     transform: scale(1.03);
   }
   
