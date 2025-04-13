@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+
+# async database and PostgreSQL
+databases[asyncpg]
+asyncpg
+
+# Google OAuth
+httpx
+
+# JWT handling
+python-jose[cryptography]
+
+# Environment variable support
+python-dotenv
