@@ -1,8 +1,10 @@
 import { ReactElement, useState, useEffect, useRef } from 'react';
 import { 
   SendHorizonal, ChevronDown, ChevronRight, 
-  Trash2, Plus, GripVertical, Check, XCircle, Link 
+  Trash2, Plus, GripVertical, Check, XCircle, Link,
+  Podcast, Share, StickyNote
 } from 'lucide-react';
+import { Tooltip } from '@mui/material';
 import axios from 'axios';
 import QueryBar from '../../../components/querybar/querybar';
 
@@ -20,7 +22,7 @@ interface Source {
 }
 
 // Define Phase type
-type Phase = 'query_refinement' | 'source_refinement' | 'draft_review';
+type Phase = 'query_refinement' | 'source_refinement' | 'draft_review' | 'finalize';
 
 // API base URL
 const API_BASE_URL = 'https://api.example.com';
@@ -53,6 +55,14 @@ function Query() {
     const [isAddingSource, setIsAddingSource] = useState(false);
     const urlInputRef = useRef<HTMLInputElement>(null);
     
+    // Finalize phase state
+    const [isPodcastGenerating, setIsPodcastGenerating] = useState(false);
+    const [podcastUrl, setPodcastUrl] = useState<string | null>(null);
+    const [isSharing, setIsSharing] = useState(false);
+    const [shareUrl, setShareUrl] = useState<string | null>(null);
+    const [isPosting, setIsPosting] = useState(false);
+    const [postResult, setPostResult] = useState<string | null>(null);
+    
     // Effect to focus the URL input field when it appears
     useEffect(() => {
         if (showUrlInput && urlInputRef.current) {
@@ -84,8 +94,8 @@ function Query() {
         } else if (currentPhase === 'source_refinement') {
             setCurrentPhase('draft_review');
         } else if (currentPhase === 'draft_review') {
-            // Here you would typically submit the final draft
-            console.log('Final draft approved');
+            setCurrentPhase('finalize');
+        } else if (currentPhase === 'finalize') {
             // Reset the app
             setOverlay(false);
             setResponseData('Please wait while we process your request.');
@@ -93,6 +103,9 @@ function Query() {
             setIsQuerySatisfactory(false);
             setRefinedQuery(null);
             setQueryFeedback(null);
+            setPodcastUrl(null);
+            setShareUrl(null);
+            setPostResult(null);
         }
     };
     
@@ -107,6 +120,9 @@ function Query() {
         } else if (currentPhase === 'draft_review') {
             // Go back to source refinement
             setCurrentPhase('source_refinement');
+        } else if (currentPhase === 'finalize') {
+            // Go back to draft review
+            setCurrentPhase('draft_review');
         }
     };
     
@@ -156,7 +172,7 @@ function Query() {
             setDraftContent(response.data.content);
         } catch (error) {
             console.error('Error fetching draft:', error);
-            setDraftContent('Based on the sources you provided, here is a draft that synthesizes the information...\n\nArtificial Intelligence (AI) has rapidly evolved in recent years, becoming increasingly integrated into various aspects of our daily lives and industries. From fundamental concepts in machine learning to advanced applications, AI represents a transformative technology with far-reaching implications.\n\nMachine learning, a core component of AI, relies on algorithms that enable systems to learn from data and improve over time without explicit programming. These principles form the foundation for more complex AI systems that can analyze information, recognize patterns, and make predictions with increasing accuracy.');
+            setDraftContent('Placeholder: Artificial Intelligence (AI) has rapidly evolved in recent years, becoming increasingly integrated into various aspects of our daily lives and industries. From fundamental concepts in machine learning to advanced applications, AI represents a transformative technology with far-reaching implications.\n\nMachine learning, a core component of AI, relies on algorithms that enable systems to learn from data and improve over time without explicit programming. These principles form the foundation for more complex AI systems that can analyze information, recognize patterns, and make predictions with increasing accuracy.');
         }
     };
     
@@ -356,6 +372,69 @@ Suggested query: "${searchValue} with recent developments and practical applicat
         }
     };
     
+    const generatePodcast = async () => {
+        setIsPodcastGenerating(true);
+        
+        try {
+            const response = await axios.post(`${API_BASE_URL}/generate-podcast`, {
+                content: draftContent,
+                sources: sources
+            });
+            
+            setPodcastUrl(response.data.podcastUrl);
+        } catch (error) {
+            console.error('Error generating podcast:', error);
+            // For demo purposes
+            setTimeout(() => {
+                setPodcastUrl('https://example.com/sample-podcast.mp3');
+            }, 1500);
+        } finally {
+            setIsPodcastGenerating(false);
+        }
+    };
+
+    const shareContent = async () => {
+        setIsSharing(true);
+        
+        try {
+            const response = await axios.post(`${API_BASE_URL}/share`, {
+                content: draftContent,
+                sources: sources
+            });
+            
+            setShareUrl(response.data.shareUrl);
+        } catch (error) {
+            console.error('Error sharing content:', error);
+            // For demo purposes
+            setTimeout(() => {
+                setShareUrl('https://share.example.com/document/abc123');
+            }, 1000);
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const postContent = async () => {
+        setIsPosting(true);
+        
+        try {
+            const response = await axios.post(`${API_BASE_URL}/post`, {
+                content: draftContent,
+                sources: sources.map(source => source.id)
+            });
+            
+            setPostResult(response.data.message || 'Content posted successfully');
+        } catch (error) {
+            console.error('Error posting content:', error);
+            // For demo purposes
+            setTimeout(() => {
+                setPostResult('Content posted successfully (demo)');
+            }, 1500);
+        } finally {
+            setIsPosting(false);
+        }
+    };
+
     // Render confirmation buttons based on current phase
     const renderConfirmationButtons = () => {
         let confirmText = 'Confirm';
@@ -372,8 +451,11 @@ Suggested query: "${searchValue} with recent developments and practical applicat
             confirmText = 'Generate Draft';
             denyText = 'Back to Query';
         } else if (currentPhase === 'draft_review') {
-            confirmText = 'Approve Draft';
+            confirmText = 'Finalize';
             denyText = 'Back to Sources';
+        } else if (currentPhase === 'finalize') {
+            confirmText = 'Done';
+            denyText = 'Back to Draft';
         }
         
         return (
@@ -397,10 +479,11 @@ Suggested query: "${searchValue} with recent developments and practical applicat
 
     // Render progress bar
     const renderProgressBar = () => {
-        const phases = ['Query', 'Sources', 'Draft'];
+        const phases = ['Query', 'Sources', 'Draft', 'Finalize'];
         const currentIndex = 
             currentPhase === 'query_refinement' ? 0 : 
-            currentPhase === 'source_refinement' ? 1 : 2;
+            currentPhase === 'source_refinement' ? 1 : 
+            currentPhase === 'draft_review' ? 2 : 3;
             
         return (
             <div className="phase-progress">
@@ -417,7 +500,7 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                 <div className="progress-line">
                     <div 
                         className="progress-completed" 
-                        style={{ width: `${currentIndex * 50}%` }}
+                        style={{ width: `${(currentIndex * 100) / 3}%` }}
                     ></div>
                 </div>
             </div>
@@ -595,6 +678,107 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                             <div className="phase-content">
                                 <div className="draft-content">
                                     <p className="draft-text">{draftContent}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            case 'finalize':
+                return (
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Finalize</span>
+                                <div className="action-icons">
+                                    <Tooltip title="Generate Podcast" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            {podcastUrl ? (
+                                                <a href={podcastUrl} target="_blank" rel="noopener noreferrer">
+                                                    <Podcast size={20} color="#4CAF50" />
+                                                </a>
+                                            ) : (
+                                                <Podcast 
+                                                    size={20} 
+                                                    onClick={generatePodcast}
+                                                    color={isPodcastGenerating ? "#999" : "#333"}
+                                                    style={{ opacity: isPodcastGenerating ? 0.5 : 1 }}
+                                                />
+                                            )}
+                                        </span>
+                                    </Tooltip>
+                                    
+                                    <Tooltip title="Share Content" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            {shareUrl ? (
+                                                <a href={shareUrl} target="_blank" rel="noopener noreferrer">
+                                                    <Share size={20} color="#2196F3" />
+                                                </a>
+                                            ) : (
+                                                <Share 
+                                                    size={20} 
+                                                    onClick={shareContent}
+                                                    color={isSharing ? "#999" : "#333"}
+                                                    style={{ opacity: isSharing ? 0.5 : 1 }}
+                                                />
+                                            )}
+                                        </span>
+                                    </Tooltip>
+                                    
+                                    <Tooltip title="Post Content" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            <StickyNote 
+                                                size={20} 
+                                                onClick={postContent}
+                                                color={isPosting || postResult ? "#999" : "#333"}
+                                                style={{ opacity: isPosting || postResult ? 0.5 : 1 }}
+                                            />
+                                        </span>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                            <div className="phase-content">
+                                <div className="finalize-content">
+                                    <div className="finalized-draft">
+                                        <h3>Final Content</h3>
+                                        <div className="draft-container">
+                                            <p>{draftContent}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Status messages for actions */}
+                                    <div className="action-results">
+                                        {isPodcastGenerating && (
+                                            <div className="action-status">Generating podcast...</div>
+                                        )}
+                                        {podcastUrl && (
+                                            <div className="action-success">
+                                                Podcast generated successfully! 
+                                                <a href={podcastUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                                                    Listen to Podcast
+                                                </a>
+                                            </div>
+                                        )}
+                                        
+                                        {isSharing && (
+                                            <div className="action-status">Sharing content...</div>
+                                        )}
+                                        {shareUrl && (
+                                            <div className="action-success">
+                                                Content shared successfully! 
+                                                <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                                                    View Shared Content
+                                                </a>
+                                            </div>
+                                        )}
+                                        
+                                        {isPosting && (
+                                            <div className="action-status">Posting content...</div>
+                                        )}
+                                        {postResult && (
+                                            <div className="action-success">{postResult}</div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
