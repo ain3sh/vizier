@@ -62,7 +62,35 @@ async def generate_draft(data: dict, request: Request):
         "content": dummy_content
     })
 
-    return {"draft_id": draft_id, "status": "generated"}
+    return {"draft_id": draft_id, "content":dummy_content ,"status": "generated"}
+
+
+@router.get("/{query_id}")
+async def get_generated_draft_by_query(query_id: str, request: Request):
+    user_id = get_current_user(request)
+
+    draft = await database.fetch_one("""
+        SELECT draft_id, query_id, user_id, content, status, created_at
+        FROM drafts
+        WHERE query_id = :query_id AND user_id = :user_id
+        ORDER BY created_at DESC
+        LIMIT 1
+    """, {
+        "query_id": query_id,
+        "user_id": user_id
+    })
+
+    if not draft:
+        raise HTTPException(status_code=404, detail="No generated draft found for this query")
+
+    return {
+        "draft_id": draft["draft_id"],
+        "query_id": draft["query_id"],
+        "content": draft["content"],
+        "status": draft["status"],
+        "created_at": draft["created_at"]
+    }
+
 
 @router.post("/accept")
 async def accept_draft(data: dict, request: Request):
