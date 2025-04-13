@@ -89,44 +89,46 @@ function Query() {
             const response = await axios.get(`${API_BASE_URL}/queries/${queryId}/sources`, getAuthHeader());
             const sourcesData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
             setSources(sourcesData);
+            console.log('goofy');
         } catch (err) {
             console.error('Error fetching sources:', err);
-            const sourcesData = JSON.parse(`[
-  {
-    "id": "13d8cb8c-7e9e-4a25-9a5b-81c5e1e5a7cd",
-    "url": "https://arxiv.org/abs/2303.00745",
-    "date": "2023-03-02",
-    "name": "arXiv",
-    "root": "arxiv.org",
-    "title": "Comparing Classical and Quantum Machine Learning for Molecular Property Prediction",
-    "author": "S. Johri et al.",
-    "snippet": "This study benchmarks classical and quantum ML models across molecular datasets, highlighting the performance tradeoffs on QM9 and MD17."
-  },
-  {
-    "id": "8c50c72a-643d-4658-947a-02b657d0ae89",
-    "url": "https://www.nature.com/articles/s41467-022-29693-y",
-    "date": "2022-04-12",
-    "name": "Nature Communications",
-    "root": "nature.com",
-    "title": "Quantum chemistry calculations on a superconducting quantum processor",
-    "author": "Kandala et al.",
-    "snippet": "IBM's quantum processor is used to simulate molecular ground states with VQE, demonstrating hardware-specific performance bottlenecks."
-  },
-  {
-    "id": "2fb5b5fc-1ae4-4a1e-a6c1-066f8caa17bb",
-    "url": "https://www.sciencedirect.com/science/article/pii/S0010465521001692",
-    "date": "2021-05-01",
-    "name": "Computer Physics Communications",
-    "root": "sciencedirect.com",
-    "title": "SchNetPack: A Deep Learning Toolbox For Atomistic Systems",
-    "author": "A. T. Unke et al.",
-    "snippet": "Presents SchNetPack, a modular toolbox implementing neural networks like SchNet for fast and accurate quantum chemistry predictions."
-  }
-]
-`)
+            const sourcesData = [
+                {
+                    "id": "13d8cb8c-7e9e-4a25-9a5b-81c5e1e5a7cd",
+                    "url": "https://arxiv.org/abs/2303.00745",
+                    "date": "2023-03-02",
+                    "name": "arXiv",
+                    "root": "arxiv.org",
+                    "title": "Comparing Classical and Quantum Machine Learning for Molecular Property Prediction",
+                    "author": "S. Johri et al.",
+                    "snippet": "This study benchmarks classical and quantum ML models across molecular datasets, highlighting the performance tradeoffs on QM9 and MD17."
+                },
+                {
+                    "id": "8c50c72a-643d-4658-947a-02b657d0ae89",
+                    "url": "https://www.nature.com/articles/s41467-022-29693-y",
+                    "date": "2022-04-12",
+                    "name": "Nature Communications",
+                    "root": "nature.com",
+                    "title": "Quantum chemistry calculations on a superconducting quantum processor",
+                    "author": "Kandala et al.",
+                    "snippet": "IBM's quantum processor is used to simulate molecular ground states with VQE, demonstrating hardware-specific performance bottlenecks."
+                },
+                {
+                    "id": "2fb5b5fc-1ae4-4a1e-a6c1-066f8caa17bb",
+                    "url": "https://www.sciencedirect.com/science/article/pii/S0010465521001692",
+                    "date": "2021-05-01",
+                    "name": "Computer Physics Communications",
+                    "root": "sciencedirect.com",
+                    "title": "SchNetPack: A Deep Learning Toolbox For Atomistic Systems",
+                    "author": "A. T. Unke et al.",
+                    "snippet": "Presents SchNetPack, a modular toolbox implementing neural networks like SchNet for fast and accurate quantum chemistry predictions."
+                }
+                ];
             setSources(sourcesData);
+            console.log('Set sources: ', sourcesData);
         } finally {
             setIsLoading(false);
+            console.log('here');
         }
     }, [queryId, getAuthHeader]);
 
@@ -205,9 +207,9 @@ All implementations and evaluations will be documented with clear technical rati
 
     // -- Effect: Fetch sources or draft content when phase changes --
     useEffect(() => {
-        if (queryId && currentPhase === 'source_refinement') {
+        if (currentPhase === 'source_refinement') {
             fetchSources();
-        } else if (queryId && currentPhase === 'draft_review') {
+        } else if (currentPhase === 'draft_review') {
             fetchDraft();
         }
     }, [currentPhase, queryId, fetchSources, fetchDraft]);
