@@ -1,0 +1,5600 @@
+Folder Structure
+--------------------------------------------------
+src/
+    vite-env.d.ts
+        app/
+            App.css
+            App.tsx
+            index.css
+            main.tsx
+            pages/
+                discover/
+                    discover.css
+                    discover.tsx
+                graph/
+                    graph.css
+                    graph.tsx
+                    graphoverlay.css
+                    graphoverlay.tsx
+                    graphpage.tsx
+                library/
+                    library.css
+                    library.tsx
+                login/
+                    AuthCallback.tsx
+                    login.css
+                    login.tsx
+                onboarding/
+                    onboarding.css
+                    onboarding.tsx
+                query/
+                    query-integrated.tsx
+                    query-with-api.tsx
+                    query.css
+                    query.tsx
+                settings/
+                    settings.css
+                    settings.tsx
+                spaces/
+                    spaces.css
+                    spaces.tsx
+        assets/
+            react.svg
+        components/
+            navigation/
+                navbar.css
+                navbar.tsx
+            querybar/
+                querybar.css
+                querybar.tsx
+                QueryProgressBar.css
+                QueryProgressBar.tsx
+        services/
+            api.ts
+
+
+File Contents
+--------------------------------------------------
+
+
+./src\vite-env.d.ts
+File type: .ts
+/// <reference types="vite/client" />
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\App.css
+File type: .css
+/* Reset some basic elements */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    color: #fff;
+    font-family: Roboto, sans-serif;
+    /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; */
+}
+
+.vizier-app {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+#root {
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* Sidebar styles */
+.sidebar {
+    width: 220px;
+    background-color: #111;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.logo {
+    padding: 10px 0;
+    margin-bottom: 20px;
+    height: 6em;
+    will-change: filter;
+    transition: filter 300ms;
+}
+
+.logo:hover {
+    filter: drop-shadow(0 0 2em #646cffaa);
+}
+
+.logo.react:hover {
+    filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+.logo h2 {
+    font-weight: 500;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-icon {
+    font-size: 18px;
+}
+
+.nav-text {
+    font-size: 16px;
+}
+
+/* Main content styles */
+.main-content {
+    background-color: #1a1a1a;
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.query-section {
+    max-width: 700px;
+    width: 100%;
+    text-align: center;
+}
+
+.center-text {
+    font-size: 36px;
+    margin-bottom: 30px;
+    font-weight: 500;
+}
+
+.search-container {
+    width: 100%;
+}
+
+.search-input {
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid #444;
+    background-color: #222;
+    color: #fff;
+    font-size: 16px;
+    outline: none;
+}
+
+.search-input:focus {
+    border-color: #555;
+}
+
+/* Remove default styles that might conflict */
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+}
+
+button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    outline: none;
+}
+
+.card {
+    padding: 2em;
+}
+
+.read-the-docs {
+    color: #888;
+}
+
+@keyframes logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    a:nth-of-type(2) .logo {
+        animation: logo-spin infinite 20s linear;
+    }
+}
+
+
+.top-bar {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    z-index: 999;
+  }
+  
+  .logout-button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.2s ease;
+  }
+  
+  .logout-button:hover {
+    background-color: #d32f2f;
+  }
+  
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\App.tsx
+File type: .tsx
+import { ReactElement, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { House, Earth, LayoutPanelLeft, LibraryBig, Settings } from 'lucide-react';
+
+import './App.css';
+import NavBar from '../components/navigation/navbar';
+import Query from './pages/query/query';
+
+function App() {
+    const navigate = useNavigate();
+    const [timeOfDay, setTimeOfDay] = useState('...');
+    const [userName, setUserName] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    const handleLogout = () => {
+        localStorage.removeItem('jwt');
+        navigate('/login');
+    };
+
+    useEffect(() => {
+        const token = localStorage.getItem('jwt');
+        if (!token) {
+            console.log("🔐 No JWT found, redirecting to login...");
+            navigate('/login');
+            return;
+        }
+
+        const fetchUserName = async () => {
+            try {
+                console.log("✅ JWT found, fetching user info...");
+                const res = await axios.get('http://localhost:8000/user/me', {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                setUserName(res.data.name || '');
+                console.log("👤 User name:", res.data.name);
+                setTimeOfDay(getTimeOfDay());
+                setLoading(false);
+            } catch (err) {
+                console.error("❌ Error fetching user info:", err);
+                localStorage.removeItem('jwt');
+                navigate('/login');
+            }
+        };
+
+        fetchUserName();
+    }, [navigate]);
+
+    const getTimeOfDay = () => {
+        const hour = new Date().getHours();
+        if (hour < 12 && hour >= 4) return 'Morning';
+        if (hour < 18 && hour >= 12) return 'Afternoon';
+        return 'Evening';
+    };
+
+    const navItems: [string, ReactElement][] = [
+        ['Home', <House />],
+        ['Discover', <Earth />],
+        ['Spaces', <LayoutPanelLeft />],
+        ['Library', <LibraryBig />],
+        ['Settings', <Settings />],
+    ];
+
+    if (loading) return <div className="loading-screen">🔄 Verifying token...</div>;
+
+    return (
+        <div className="vizier-app">
+            <div className="top-bar">
+                <button className="logout-button" onClick={handleLogout}>Logout</button>
+            </div>
+            {/* Sidebar Navigation */}
+            <NavBar li={navItems} />
+
+            {/* Main Content */}
+            <div className="main-content">
+                <div className="query-section">
+                    <h1 className="center-text">Good {timeOfDay}{userName ? `, ${userName.split(' ')[0]}` : ''}</h1>
+                    <Query />
+                    <div className="additional-info" />
+                    <div className="footer" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default App;
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\index.css
+File type: .css
+:root {
+    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #242424;
+
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+    font-weight: 500;
+    color: #464646;
+    text-decoration: inherit;
+}
+a:hover {
+    color: #464646;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    place-items: center;
+    min-width: 320px;
+    min-height: 100vh;
+}
+
+h1 {
+    font-size: 3.2em;
+    line-height: 1.1;
+}
+
+button {
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 0.6em 1.2em;
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #1a1a1a;
+    cursor: pointer;
+    transition: border-color 0.25s;
+}
+button:hover {
+    border-color: #464646;
+}
+button:focus,
+button:focus-visible {
+    outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        color: #464646;
+        background-color: #ffffff;
+    }
+    a:hover {
+        color: #464646;
+    }
+    button {
+        background-color: #464646;
+    }
+}
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\main.tsx
+File type: .tsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './index.css'
+import App from './App.tsx';
+import OnBoarding from './pages/onboarding/onboarding.tsx';
+import Login from './pages/login/login.tsx'
+import AuthCallback from './pages/login/AuthCallback.tsx';
+import AgentFlowGraph from './pages/graph/graphpage.tsx';
+
+createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+        <BrowserRouter>
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/login/success" element={<AuthCallback />} />
+                <Route path="/*" element={<App />} />
+                <Route path="/graph" element={<AgentFlowGraph />} />
+                {/* <Route path="/" element={<OnBoarding/>}/> */}
+            </Routes>
+        </BrowserRouter>
+    </StrictMode>,
+)
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\discover\discover.css
+File type: .css
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\discover\discover.tsx
+File type: .tsx
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\graph\graph.css
+File type: .css
+html, body, #root {
+    background-color: black !important; 
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(0, 168, 76, 0.7); transform: scale(1); }
+    70% { box-shadow: 0 0 15px 20px rgba(0, 168, 76, 0); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 168, 76, 0); transform: scale(1); }
+  }
+  
+  .node-pulsing {
+    animation: pulse 10s infinite ease-out;
+    border-color: rgb(0, 168, 76);
+    box-shadow: 0 0 14px rgb(0, 168, 76);
+  }
+  
+  @keyframes glow-node {
+    0% { box-shadow: 0 0 10px 10px rgba(0, 255, 200, 0.6); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 200, 0); }
+  }
+  
+  .node-glowing {
+    animation: glow-node 3s ease-out;
+    border-color: #00ffd5;
+  }
+  
+  @keyframes draw-line {
+    to { stroke-dashoffset: 0; }
+  }
+  
+  .edge-glowing .react-flow__edge-path {
+    stroke: rgb(0, 168, 76); /* emerald green */
+    stroke-width: 3px;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 6px rgb(0, 168, 76));
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: draw-line 1.8s forwards ease-out;
+  }
+  
+  .react-flow__edge-path {
+    stroke: rgb(183, 228, 203); /* emerald default too */
+    stroke-width: 2px;
+    transition: stroke 0.3s ease, stroke-width 0.3s ease;
+  }
+  
+  .react-flow__node-default,
+  .react-flow__node-input,
+  .react-flow__node-output {
+    width: 50px;
+    height: 50px;
+    border-radius: 50% !important;
+    background-color: rgb(0, 168, 76);
+    border: 2px solid rgb(0, 168, 76);
+    box-shadow: 0 0 6px rgb(0, 168, 76);
+    padding: 0;
+    font-size: 0;
+    transition: all 0.4s ease;
+  }
+  
+  /* Add specific styling for failed nodes */
+  .react-flow__node-default[data-failed="true"],
+  .react-flow__node-input[data-failed="true"],
+  .react-flow__node-output[data-failed="true"] {
+    background-color: #ff4d4d !important;
+    border-color: #ff0000 !important;
+    box-shadow: 0 0 6px #ff0000 !important;
+  }
+  
+  .react-flow__viewport .react-flow__node.failed-node {
+    background-color: #ff4d4d !important;
+    border-color: #ff0000 !important;
+    box-shadow: 0 0 6px #ff0000 !important;
+  }
+
+  .react-flow__viewport .react-flow__node.failed-node.node-pulsing {
+    animation: pulse-failed 2s infinite ease-out;
+  }
+
+  @keyframes pulse-failed {
+    0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); transform: scale(1); }
+    70% { box-shadow: 0 0 15px 20px rgba(255, 77, 77, 0); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); transform: scale(1); }
+  }
+  
+  .react-flow__node:not(.node-pulsing):not(.node-glowing) {
+    animation: none;
+    box-shadow: none;
+  }
+  
+  .react-flow__edge:not(.edge-glowing) .react-flow__edge-path {
+    animation: none;
+  }
+
+  .failed-node {
+    animation: pulse-failed 2s infinite ease-out !important;
+    background-color: #ff4d4d !important;
+    border-color: #ff0000 !important;
+    box-shadow: 0 0 6px #ff0000 !important;
+  }
+
+  @keyframes pulse-failed {
+    0% { 
+      box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.7); 
+      transform: scale(1); 
+    }
+    50% { 
+      box-shadow: 0 0 20px 10px rgba(255, 77, 77, 0.3); 
+      transform: scale(1.05); 
+    }
+    100% { 
+      box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); 
+      transform: scale(1); 
+    }
+  }
+
+  .draft-instruction {
+    margin-top: 8px;
+    color: #10b981;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\graph\graph.tsx
+File type: .tsx
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ReactFlow, useNodesState, useEdgesState, Node, Edge, ReactFlowInstance } from '@xyflow/react';
+import { useNavigate } from 'react-router-dom';
+
+import '@xyflow/react/dist/style.css';
+import './graph.css';
+
+interface NodeData extends Record<string, unknown> {
+  label?: string;
+}
+
+type NodeType = Node<NodeData>;
+type EdgeType = Edge;
+
+interface NodeDefinition {
+  id: string;
+  data: NodeData;
+  position: { x: number; y: number };
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+interface SimulationStep {
+  addNodes: string[];
+  addEdges?: string[];
+  activeNode: string | null;
+  markFailed?: string[];
+}
+
+// First phase agents (data retrieval)
+const retrievalAgents = ['twitter-agent', 'web-agent'];
+const retrievalSteps = ['search', 'analyze', 'summarize'];
+
+// Second phase agents (source processing)
+const sourceAgents = ['source-1', 'source-2', 'source-3', 'source-4'];
+const sourceSteps = ['read', 'validate', 'analyze', 'extract'];
+
+const allNodesData: NodeDefinition[] = [
+  // First phase - Query and Retrieval
+  { id: 'start-node', data: { label: 'Start' }, position: { x: 400, y: 0 } },
+  { id: 'query-node', data: { label: 'Query' }, position: { x: 400, y: 200 } },
+  ...retrievalAgents.flatMap((agentId, i) => {
+    const x = 250 + i * 300;
+    return [
+      { id: agentId, data: { label: agentId }, position: { x, y: 400 } },
+      ...retrievalSteps.map((step, j) => ({
+        id: `${agentId}-${step}`,
+        data: { label: `${step}` },
+        position: { x, y: 600 + j * 200 },
+      })),
+    ];
+  }),
+  { id: 'merge-node', data: { label: 'Sources Collection' }, position: { x: 400, y: 1200 } },
+  
+  // Second phase - Source Processing
+  ...sourceAgents.flatMap((agentId, i) => {
+    const x = 100 + i * 200;
+    return [
+      { id: agentId, data: { label: agentId }, position: { x, y: 1400 } },
+      ...sourceSteps.map((step, j) => ({
+        id: `${agentId}-${step}`,
+        data: { label: `${step}` },
+        position: { x, y: 1600 + j * 200 },
+      })),
+    ];
+  }),
+  { id: 'final-merge-node', data: { label: 'Compile & Write' }, position: { x: 400, y: 2400 } },
+];
+
+const allEdgesData: EdgeType[] = [
+  // Phase 1 edges
+  { id: 'start-to-query', source: 'start-node', target: 'query-node', type: 'default' },
+  ...retrievalAgents.map(agentId => ({ 
+    id: `query-${agentId}`, 
+    source: 'query-node', 
+    target: agentId, 
+    type: 'default' 
+  })),
+  ...retrievalAgents.flatMap(agentId => (
+    retrievalSteps.slice(0, -1).map((step, i) => ({
+      id: `${agentId}-${step}-${retrievalSteps[i + 1]}`,
+      source: `${agentId}-${step}`,
+      target: `${agentId}-${retrievalSteps[i + 1]}`,
+      type: 'default'
+    })).concat({
+      id: `${agentId}-link`, 
+      source: agentId, 
+      target: `${agentId}-search`, 
+      type: 'default'
+    })
+  )),
+  // Connect the last step of each retrieval agent to the merge node
+  ...retrievalAgents.map(agentId => ({
+    id: `${agentId}-to-merge`,
+    source: `${agentId}-summarize`,
+    target: 'merge-node',
+    type: 'default'
+  })),
+  
+  // Phase 2 edges
+  ...sourceAgents.map(agentId => ({
+    id: `merge-to-${agentId}`,
+    source: 'merge-node',
+    target: agentId,
+    type: 'default'
+  })),
+  ...sourceAgents.flatMap(agentId => (
+    sourceSteps.slice(0, -1).map((step, i) => ({
+      id: `${agentId}-${step}-${sourceSteps[i + 1]}`,
+      source: `${agentId}-${step}`,
+      target: `${agentId}-${sourceSteps[i + 1]}`,
+      type: 'default'
+    })).concat({
+      id: `${agentId}-source-link`, 
+      source: agentId, 
+      target: `${agentId}-read`, 
+      type: 'default'
+    })
+  )),
+  // Connect the last step of each source agent to the final merge node
+  ...sourceAgents.map(agentId => ({
+    id: `${agentId}-to-final`,
+    source: `${agentId}-extract`,
+    target: 'final-merge-node',
+    type: 'default'
+  })),
+];
+
+const simulationSteps: SimulationStep[] = [
+  // Phase 1: Retrieval process
+  { addNodes: ['start-node'], addEdges: [], activeNode: 'start-node' },
+  { addNodes: ['query-node'], addEdges: ['start-to-query'], activeNode: 'query-node' },
+  { addNodes: retrievalAgents, addEdges: retrievalAgents.map(a => `query-${a}`), activeNode: null },
+  { addNodes: ['twitter-agent-search'], addEdges: ['twitter-agent-link'], activeNode: 'twitter-agent-search' },
+  { addNodes: ['web-agent-search'], addEdges: ['web-agent-link'], activeNode: 'web-agent-search' },
+  { addNodes: ['twitter-agent-analyze'], addEdges: ['twitter-agent-search-analyze'], activeNode: 'twitter-agent-analyze' },
+  { addNodes: ['web-agent-analyze'], addEdges: ['web-agent-search-analyze'], activeNode: 'web-agent-analyze' },
+  { addNodes: ['twitter-agent-summarize'], addEdges: ['twitter-agent-analyze-summarize'], activeNode: 'twitter-agent-summarize' },
+  { addNodes: ['web-agent-summarize'], addEdges: ['web-agent-analyze-summarize'], activeNode: 'web-agent-summarize' },
+  { addNodes: ['merge-node'], addEdges: ['twitter-agent-to-merge', 'web-agent-to-merge'], activeNode: 'merge-node' },
+  
+  // Phase 2: Source processing
+  { addNodes: sourceAgents, addEdges: sourceAgents.map(a => `merge-to-${a}`), activeNode: null },
+  
+  // Source agent 1 path - completes successfully
+  { addNodes: ['source-1-read'], addEdges: ['source-1-source-link'], activeNode: 'source-1-read' },
+  { addNodes: ['source-1-validate'], addEdges: ['source-1-read-validate'], activeNode: 'source-1-validate' },
+  { addNodes: ['source-1-analyze'], addEdges: ['source-1-validate-analyze'], activeNode: 'source-1-analyze' },
+  { addNodes: ['source-1-extract'], addEdges: ['source-1-analyze-extract'], activeNode: 'source-1-extract' },
+  
+  // Source agent 2 path - completes successfully
+  { addNodes: ['source-2-read'], addEdges: ['source-2-source-link'], activeNode: 'source-2-read' },
+  { addNodes: ['source-2-validate'], addEdges: ['source-2-read-validate'], activeNode: 'source-2-validate' },
+  { addNodes: ['source-2-analyze'], addEdges: ['source-2-validate-analyze'], activeNode: 'source-2-analyze' },
+  { addNodes: ['source-2-extract'], addEdges: ['source-2-analyze-extract'], activeNode: 'source-2-extract' },
+  
+  // Source agent 3 path - rejects at validation step
+  { addNodes: ['source-3-read'], addEdges: ['source-3-source-link'], activeNode: 'source-3-read' },
+  { addNodes: ['source-3-validate'], addEdges: ['source-3-read-validate'], markFailed: ['source-3-validate'], activeNode: 'source-3-validate' },
+  
+  // Source agent 4 path - rejects at validation step
+  { addNodes: ['source-4-read'], addEdges: ['source-4-source-link'], activeNode: 'source-4-read' },
+  { addNodes: ['source-4-validate'], addEdges: ['source-4-read-validate'], markFailed: ['source-4-validate'], activeNode: 'source-4-validate' },
+  
+  // Final merge
+  { addNodes: ['final-merge-node'], addEdges: ['source-1-to-final', 'source-2-to-final'], activeNode: 'final-merge-node' },
+];
+
+// Define viewport focus points
+const viewportRegions = {
+  top: { minY: 0, maxY: 800, center: { x: 400, y: 400 } },
+  middle: { minY: 800, maxY: 1600, center: { x: 400, y: 1200 } },
+  bottom: { minY: 1600, maxY: 2400, center: { x: 400, y: 2000 } }
+};
+
+function determineViewportRegion(nodeId: string): keyof typeof viewportRegions {
+  const node = allNodesData.find(n => n.id === nodeId);
+  if (!node) return 'middle';
+  
+  const y = node.position.y;
+  if (y <= viewportRegions.top.maxY) return 'top';
+  if (y <= viewportRegions.middle.maxY) return 'middle';
+  return 'bottom';
+}
+
+function AgentFlowGraph() {
+  const navigate = useNavigate();
+  const [nodes, setNodes, onNodesChange] = useNodesState([] as NodeType[]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([] as EdgeType[]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(-1);
+  const flowRef = useRef<ReactFlowInstance | null>(null);
+  const [isReturningFromQuery, setIsReturningFromQuery] = useState(false);
+  const [graphToDraft, setGraphToDraft] = useState(false);
+
+  const focusOnRegion = useCallback((region: keyof typeof viewportRegions, duration = 800) => {
+    if (!flowRef.current) return;
+    
+    const viewport = viewportRegions[region];
+    flowRef.current.setCenter(
+      viewport.center.x,
+      viewport.center.y,
+      { duration, zoom: 0.75 }
+    );
+  }, []);
+
+  // Add effect to check if this is first time from query
+  useEffect(() => {
+    const isFirstTime = sessionStorage.getItem('firstTimeGraph');
+    const savedGraphState = sessionStorage.getItem('graphState');
+    const queryState = sessionStorage.getItem('queryState');
+
+    if (isFirstTime === 'true') {
+      // Reset everything
+      setNodes([]);
+      setEdges([]);
+      setCurrentStepIndex(-1);
+      sessionStorage.removeItem('graphState');
+      sessionStorage.removeItem('firstTimeGraph');
+      setIsReturningFromQuery(false);
+    } else if (savedGraphState && queryState) {
+      const { nodes, edges, currentStepIndex } = JSON.parse(savedGraphState);
+      setNodes(nodes);
+      setEdges(edges);
+      setCurrentStepIndex(currentStepIndex);
+      setIsReturningFromQuery(true);
+      // Add a small delay to ensure the graph is initialized
+      setTimeout(() => focusOnRegion('middle'), 100);
+    }
+  }, [setNodes, setEdges, focusOnRegion]);
+
+  // Add effect to check for graph to draft transition
+  useEffect(() => {
+    const graphToDraft = sessionStorage.getItem('graphToDraft');
+    if (graphToDraft === 'true') {
+      setGraphToDraft(true);
+    }
+  }, []);
+
+  // Save state before leaving
+  useEffect(() => {
+    return () => {
+      // Only save if we have progress
+      if (currentStepIndex > -1) {
+        const stateToSave = {
+          nodes,
+          edges,
+          currentStepIndex
+        };
+        sessionStorage.setItem('graphState', JSON.stringify(stateToSave));
+      }
+    };
+  }, [nodes, edges, currentStepIndex]);
+
+  const applyTemporaryClass = useCallback((ids: string[], type: 'node' | 'edge', className: string, duration = 1500) => {
+    if (type === 'node') {
+      setNodes(elements => 
+        elements.map(el => ids.includes(el.id) ? 
+          { ...el, className: `${el.className || ''} ${className}`.trim() } : el
+        )
+      );
+      setTimeout(() => {
+        setNodes(elements => 
+          elements.map(el => ids.includes(el.id) ? 
+            { ...el, className: (el.className || '').replace(className, '').trim() } : el
+          )
+        );
+      }, duration);
+    } else {
+      setEdges(elements => 
+        elements.map(el => ids.includes(el.id) ? 
+          { ...el, className: `${el.className || ''} ${className}`.trim() } : el
+        )
+      );
+      setTimeout(() => {
+        setEdges(elements => 
+          elements.map(el => ids.includes(el.id) ? 
+            { ...el, className: (el.className || '').replace(className, '').trim() } : el
+          )
+        );
+      }, duration);
+    }
+  }, [setNodes, setEdges]);
+
+  const stepSimulation = useCallback(() => {
+    if (currentStepIndex >= simulationSteps.length - 1) {
+      if (graphToDraft) {
+        // Clean up storage and navigate to draft review
+        sessionStorage.removeItem('graphToDraft');
+        sessionStorage.removeItem('graphState');
+        navigate('/');
+      }
+      return;
+    }
+    const nextStepIndex = currentStepIndex + 1;
+    const step = simulationSteps[nextStepIndex];
+
+    if (step.markFailed) {
+      // First mark all the subsequent nodes in the same path as failed
+      const failedNodePaths = step.markFailed.map(nodeId => {
+        const [agentId] = nodeId.split('-');
+        return sourceSteps
+          .map(step => `${agentId}-${step}`)
+          .filter(id => {
+            const stepIndex = sourceSteps.findIndex(step => id.endsWith(step));
+            const failedStepIndex = sourceSteps.findIndex(step => nodeId.endsWith(step));
+            return stepIndex >= failedStepIndex;
+          });
+      }).flat();
+
+      setNodes((prev: NodeType[]) => prev.map(n => 
+        failedNodePaths.includes(n.id)
+          ? { 
+              ...n, 
+              data: { 
+                ...n.data, 
+                failed: true 
+              },
+              className: 'failed-node',
+              style: { 
+                ...n.style, 
+                background: '#ff4d4d', 
+                borderColor: '#ff0000', 
+                borderRadius: '999px',
+              }
+            }
+          : n
+      ));
+      
+      // Find the last failed node to focus on
+      const lastFailedNode = failedNodePaths[failedNodePaths.length - 1];
+      const region = determineViewportRegion(lastFailedNode);
+      setTimeout(() => focusOnRegion(region), 100);
+
+      setCurrentStepIndex(nextStepIndex);
+      return;
+    }
+
+    const newNodes = (step.addNodes || [])
+      .map(id => allNodesData.find(n => n.id === id))
+      .filter(Boolean)
+      .map(n => ({ ...n, type: 'default' } as NodeType));
+
+    const newEdges = (step.addEdges || [])
+      .map(id => allEdgesData.find(e => e.id === id))
+      .filter(Boolean) as EdgeType[];
+
+    setNodes((prev: NodeType[]) => {
+      const updated = prev.map(n => ({
+        ...n,
+        className: (n.className || '').replace('node-pulsing', '').trim(),
+        style: { ...n.style, borderRadius: '999px' },
+      }));
+
+      const active = updated.find(n => n.id === step.activeNode);
+      const others = updated.filter(n => n.id !== step.activeNode);
+
+      const activeNode = active ? {
+        ...active,
+        className: `${active.className || ''} node-pulsing`.trim(),
+        style: {
+          ...(active.style || {}),
+          background: 'rgb(0, 168, 76)',
+          borderColor: 'rgb(0, 168, 76)',
+          borderRadius: '999px'
+        }
+      } : null;
+
+      return [...others, ...(activeNode ? [activeNode] : []), ...newNodes];
+    });
+
+    setEdges((prev: EdgeType[]) => {
+      const newUnique = newEdges.filter(e => !prev.some(pe => pe.id === e.id));
+      const newSources = newUnique.map(e => e.source);
+
+      setNodes((nodes: NodeType[]) => nodes.map(n =>
+        newSources.includes(n.id)
+          ? {
+              ...n,
+              className: (n.className || '').replace('node-pulsing', '').trim(),
+              style: {
+                ...(n.style || {}),
+                background: '#e5e7eb',
+                borderColor: '#d1d5db',
+              }
+            }
+          : n
+      ));
+
+      return [...prev, ...newUnique];
+    });
+
+    if (step.addNodes.length > 0) applyTemporaryClass(step.addNodes, 'node', 'node-glowing', 3000);
+    if (step.addEdges && step.addEdges.length > 0) {
+      applyTemporaryClass(step.addEdges, 'edge', 'edge-glowing', 4000);
+    }
+
+    if (step.activeNode) {
+      const region = determineViewportRegion(step.activeNode);
+      setTimeout(() => focusOnRegion(region), 100);
+    } else if (step.addNodes.length > 0) {
+      // If no active node, focus on the last added node
+      const lastAddedNode = step.addNodes[step.addNodes.length - 1];
+      const region = determineViewportRegion(lastAddedNode);
+      setTimeout(() => focusOnRegion(region), 100);
+    }
+
+    setCurrentStepIndex(nextStepIndex);
+  }, [currentStepIndex, focusOnRegion, applyTemporaryClass, setNodes, setEdges, graphToDraft, navigate]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') stepSimulation();
+      if (e.key.toLowerCase() === 'q') {
+        // Clear graph state if explicitly going back to query
+        sessionStorage.removeItem('graphState');
+        navigate('/', { replace: true });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stepSimulation, navigate]);
+
+  return (
+    <div style={{ width: '100vw', height: '100vh' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onInit={(instance) => {
+          flowRef.current = instance;
+          if (!isReturningFromQuery) {
+            focusOnRegion('top');
+          }
+        }}
+        fitView={false}
+      >
+      </ReactFlow>
+    </div>
+  );
+}
+
+export default AgentFlowGraph;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\graph\graphoverlay.css
+File type: .css
+.agent-graph-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 1); /* semi-transparent dark overlay */
+    backdrop-filter: blur(10px);     /* optional blur */
+    z-index: 9999;
+    pointer-events: none; /* allows clicks to pass through if needed */
+  }
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\graph\graphoverlay.tsx
+File type: .tsx
+import AgentFlowGraph from './graph'; // your animated graph
+import './graph.css'; // optional styling
+
+export default function AgentFlowGraphOverlay({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+
+  return (
+    <div className="agent-graph-overlay">
+      <AgentFlowGraph />
+    </div>
+  );
+}
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\graph\graphpage.tsx
+File type: .tsx
+import AgentFlowGraph from './graph';
+import GraphOverlay from './graphoverlay';
+import './graph.css';
+
+function GraphPage() {
+    return (
+        <div className="graph-page">
+            <AgentFlowGraph />
+            <GraphOverlay />
+            <div className="graph-instructions">
+                Press Enter to step through the visualization
+                {sessionStorage.getItem('graphToDraft') === 'true' && (
+                    <div className="draft-instruction">
+                        Complete the visualization to proceed to draft review
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default GraphPage;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\library\library.css
+File type: .css
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\library\library.tsx
+File type: .tsx
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\login\AuthCallback.tsx
+File type: .tsx
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+function AuthCallback() {
+  const navigate = useNavigate();
+  const processed = useRef(false);  // 🛡️ prevent double-processing
+
+  useEffect(() => {
+    if (processed.current) return;
+    processed.current = true;
+
+    const query = window.location.search;
+    console.log("🔍 query string:", query);
+    
+    const params = new URLSearchParams(query);
+    const token = params.get("token");
+
+    console.log("🧪 extracted token:", token);
+
+    if (token) {
+      localStorage.setItem("jwt", token);
+      navigate("/"); // ✅ redirect to home
+    } else {
+      console.error("❌ No token found in URL params.");
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  return <p>Logging in...</p>;
+}
+
+export default AuthCallback;
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\login\login.css
+File type: .css
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #111827; /* Match main dark bg */
+    color: white;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .login-card {
+    background-color: #1f2937; /* same as other dark cards */
+    padding: 3rem 4rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+  }
+  
+  .login-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .login-subtitle {
+    font-size: 1rem;
+    color: #d1d5db; /* gray-300 */
+    margin-bottom: 2rem;
+  }
+  
+  .login-btn {
+    background-color: #3a86ff; /* match send-btn */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+  }
+  
+  .login-btn:hover {
+    background-color: #2a75ef;
+    transform: scale(1.03);
+  }
+  
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\login\login.tsx
+File type: .tsx
+// src/pages/login/Login.tsx
+import './login.css';
+
+function Login() {
+  const GOOGLE_CLIENT_ID = '626032096110-ujnpegq48sk2pfeclevtqdm2umcq779g.apps.googleusercontent.com';
+  const REDIRECT_URI = 'http://localhost:8000/auth/callback'; // backend callback
+
+  const googleLoginUrl =
+    `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `response_type=code&client_id=${GOOGLE_CLIENT_ID}` +
+    `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+    `&scope=email%20profile&access_type=offline&prompt=consent`;
+
+    return (
+        <div className="login-page">
+          <div className="login-card">
+            <h1 className="login-title">Welcome to <span className="highlight">Vizier</span></h1>
+            <p className="login-subtitle">Your research co-pilot</p>
+            <a className="login-btn" href={googleLoginUrl}>
+              Sign in with Google
+            </a>
+          </div>
+        </div>
+    );
+}
+
+export default Login;
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\onboarding\onboarding.css
+File type: .css
+body {
+    background-color: #000000;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
+    color: #fff;
+    text-align: center;
+    margin-top: 100px;
+    margin-bottom: 100px;
+}
+
+h2 {
+    margin-top: 50px;
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+p {
+    color: #fff;
+    text-align: center;
+    margin: 20px 0;
+}
+
+.outer-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Take up full viewport height */
+    width: 100%; /* Take up full viewport width */
+    position: fixed; /* Fix it to the viewport */
+    top: 0;
+    left: 0;
+    z-index: 10; /* Ensure it stays above other content */
+}
+
+.onboarding-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-content: center;
+    width: 900px;
+    max-height: 100vh;
+    max-width: 1400px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: auto;
+}
+
+.onboarding-progress {
+    display: flex;
+    flex-direction: column;
+    max-width: 1400px;
+    width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: auto;
+    margin-bottom: 6em;
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #e0e0e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #555;
+}
+
+.progress-step.active {
+    background-color: rgb(0, 168, 76);
+    color: white;
+}
+
+.progress-step.current {
+    box-shadow: 0 0 0 3px rgb(0, 126, 57);
+}
+
+.progress-line {
+    display: flex;
+    height: 4px;
+    background-color: #e0e0e0;
+    position: relative;
+}
+
+.progress-completed {
+    height: 100%;
+    background-color: rgb(0, 168, 76);
+    transition: width 0.3s ease;
+}
+
+.onboarding-content {
+    display: flex;
+    max-width: 1200px;
+    max-height: 1000px;
+    min-height: 500px;
+    background-color: #202020;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    justify-content: center; /* Center children horizontally */
+    align-items: center; /* Center children vertically */
+}
+
+.onboarding-step {
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
+    width: 100%; /* Take full width of parent */
+    height: 100%; /* Take full height of parent */
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+.onboarding-input {
+    width: 90%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+.archetype-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+    width: 90%;
+}
+
+
+.archetype-option {
+    flex: 1;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.archetype-option:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.archetype-option.selected {
+    border-color: rgb(0, 168, 76);
+    background-color: rgb(0, 51, 23);
+}
+
+.slider-container {
+    width: 80%;
+    margin-top: 50px;
+    text-align: center;
+
+}
+
+.experience-slider {
+    width: 100%;
+    height: 8px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e0e0e0;
+    outline: none;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.experience-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgb(0, 168, 76);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.experience-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgb(0, 168, 76);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.experience-slider::-webkit-slider-thumb:hover,
+.experience-slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+}
+
+.slider-tooltip {
+    position: absolute;
+    background-color: rgb(0, 168, 76);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    transform: translateX(-50%);
+    bottom: 40px; /* Position from bottom instead of top */
+    pointer-events: none; /* Prevent tooltip from interfering with slider interaction */
+    z-index: 10;
+}
+
+/* Make sure the arrow points directly down to the thumb */
+.slider-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -10px; /* Position at bottom of tooltip */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgb(0, 168, 76) transparent transparent transparent;
+}
+
+/* Ensure the slider wrapper has proper positioning */
+.slider-wrapper {
+    flex-grow: 1;
+    position: relative;
+    margin: 0 15px;
+}
+
+.slider-with-labels {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin: 20px 0;
+}
+
+.slider-label {
+    font-weight: bold;
+    min-width: 20px;
+    text-align: center;
+}
+
+.slider-wrapper {
+    flex-grow: 1;
+    position: relative;
+    margin: 0 15px;
+}
+
+.slider-description {
+    display: flex;
+    justify-content: space-between;
+    font-size: 16px;
+    color: #c7c7c7;
+    margin-top: 5px;
+}
+
+.current-value {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    height: 100%;
+    width: 100%;
+}
+
+.prev-button {
+    height: 50px;
+    width: 100px;
+    background-color: #f0f0f0;
+    color: #333;
+    margin-right: auto; /* Push to the left */
+}
+
+.next-button {
+    height: 50px;
+    width: 100px;
+    background-color: rgb(0, 168, 76);
+    color: white;
+    margin-left: auto; /* Push to the right */
+}
+
+.next-button.disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.next-button.disabled:hover {
+    background-color: #cccccc;
+}
+
+.summary-step {
+    line-height: 1.6;
+}
+
+.profile-summary {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    background-color: #202020;
+    border-radius: 6px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.summary-item {
+    border: 2px solid #979797;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
+}
+
+.summary-item h3 {
+    margin-bottom: 10px;
+    color: rgb(0, 168, 76);
+    font-size: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+}
+
+.summary-item p {
+    text-align: left;
+    margin: 0;
+    color: #e0e0e0;
+    word-break: break-word;
+}
+
+.submit-button {
+    background-color: rgb(0, 168, 76);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: block;
+    margin: 30px auto 0;
+    transition: background-color 0.2s;
+}
+
+.submit-button:hover {
+    background-color: rgb(24, 99, 40);
+}
+
+/* Input validation styles */
+.input-error {
+    border-color: #e53e3e !important;
+    box-shadow: 0 0 0 1px #e53e3e;
+}
+
+.error-message {
+    color: #e53e3e;
+    font-size: 14px;
+    margin-top: 6px;
+}
+
+.input-requirements {
+    display: flex;
+    font-size: 14px;
+    margin-top: 6px;
+    color: #666;
+}
+
+.requirement-met {
+    color: rgb(0, 168, 76);
+}
+
+.character-count {
+    font-weight: 500;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\onboarding\onboarding.tsx
+File type: .tsx
+import React, { useState } from 'react';
+import axios from 'axios';
+import './onboarding.css';
+import { Slider } from '@mui/material';
+
+const OnBoarding: React.FC = () => {
+    const [currentStep, setCurrentStep] = useState(1);
+    const [profile, setProfile] = useState({
+        identity: '',
+        archetype: '',
+        goals: '',
+        experienceLevel: '5'
+    });
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const handleInputChange = (field: keyof typeof profile, value: string) => {
+        setProfile(prev => ({
+            ...prev,
+            [field]: value
+        }));
+        
+        // Clear error when field is updated
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = {...prev};
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
+    };
+
+    const validateStep = (step: number): boolean => {
+        const newErrors: Record<string, string> = {};
+        
+        switch (step) {
+            case 2:
+                if (profile.identity.length < 20) {
+                    newErrors.identity = "Please enter at least 20 characters";
+                }
+                break;
+            case 3:
+                if (!profile.archetype) {
+                    newErrors.archetype = "Please select an archetype";
+                }
+                break;
+            case 4:
+                if (profile.goals.length < 20) {
+                    newErrors.goals = "Please enter at least 20 characters";
+                }
+                break;
+        }
+        
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleNext = () => {
+        if (validateStep(currentStep) && currentStep < 6) {
+            setCurrentStep(currentStep + 1);
+        }
+    };
+
+    const handlePrevious = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+        }
+    };
+
+    const handleSubmit = async () => {
+        try {
+            await axios.post('/api/profile', profile);
+            // Redirect to dashboard or another page after successful submission
+            window.location.href = '../main.tsx';
+        } catch (error) {
+            console.error('Error submitting profile:', error);
+            // Handle error (show message to user, etc.)\
+            window.location.href = '../main.tsx';
+        }
+    };
+
+    const getAriaValueText = (value: number) => {
+        return `${value}`;
+    };
+
+    const renderStep = () => {
+        switch (currentStep) {
+            case 1:
+                return (
+                    <div className="onboarding-step">
+                        <h1>Welcome to Vizier!</h1>
+                        <p style={{fontSize: '20px'}}>Let's get started with a few questions to personalize your experience.</p>
+                    </div>
+                );
+            case 2:
+                return (
+                    <div className="onboarding-step">
+                        <h2>Tell us about you!</h2>
+                        <textarea
+                            rows={4}
+                            placeholder="I am a..."
+                            value={profile.identity}
+                            onChange={(e) => handleInputChange('identity', e.target.value)}
+                            className={`onboarding-input ${errors.identity ? 'input-error' : ''}`}
+                        />
+                        <div className="input-requirements">
+                            <span className={profile.identity.length >= 20 ? 'requirement-met' : ''}>
+                                Minimum 20 characters:
+                            </span>
+                            <span className="character-count">
+                                {profile.identity.length}/20
+                            </span>
+                        </div>
+                        {errors.identity && <div className="error-message">{errors.identity}</div>}
+                    </div>
+                );
+            case 3:
+                return (
+                    <div className="onboarding-step">
+                        <h2>Which of these best describes you?</h2>
+                        <div className="archetype-options">
+                            {['Researcher', 'Business Professional', 'Student'].map(type => (
+                                <div 
+                                    key={type}
+                                    className={`archetype-option ${profile.archetype === type ? 'selected' : ''}`}
+                                    onClick={() => handleInputChange('archetype', type)}
+                                >
+                                    <h3>{type}</h3>
+                                    <p>{getArchetypeDescription(type)}</p>
+                                </div>
+                            ))}
+                        </div>
+                        {errors.archetype && <div className="error-message">{errors.archetype}</div>}
+                    </div>
+                );
+            case 4:
+                return (
+                    <div className="onboarding-step">
+                        <h2>What are your goals and expectations?</h2>
+                        <textarea
+                            rows={4}
+                            placeholder="I want to use Vizier to..."
+                            value={profile.goals}
+                            onChange={(e) => handleInputChange('goals', e.target.value)}
+                            className={`onboarding-input ${errors.goals ? 'input-error' : ''}`}
+                        />
+                        <div className="input-requirements">
+                            <span className={profile.goals.length >= 20 ? 'requirement-met' : ''}>
+                                Minimum 20 characters:
+                            </span>
+                            <span className="character-count">
+                                {profile.goals.length}/20
+                            </span>
+                        </div>
+                        {errors.goals && <div className="error-message">{errors.goals}</div>}
+                    </div>
+                );
+            case 5:
+                return (
+                    <div className="onboarding-step">
+                        <h2>How are familiar are you with LLMs?</h2>
+                        <div className="slider-container">
+                            <div className="slider-with-labels">
+                                <span className="slider-label">0</span>
+                                <div className="slider-wrapper">
+                                    <Slider
+                                        aria-label="Experience Level"
+                                        value={parseInt(profile.experienceLevel)}
+                                        onChange={(_, newValue) => handleInputChange('experienceLevel', newValue.toString())}
+                                        getAriaValueText={getAriaValueText}
+                                        valueLabelDisplay="auto"
+                                        step={1}
+                                        marks
+                                        min={0}
+                                        max={10}
+                                        sx={{
+                                            color: 'rgb(0, 168, 76)',
+                                            '& .MuiSlider-thumb': {
+                                                width: 24,
+                                                height: 24,
+                                            },
+                                            '& .MuiSlider-valueLabel': {
+                                                backgroundColor: 'rgb(0, 168, 76)',
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <span className="slider-label">10</span>
+                            </div>
+                            <div className="slider-description">
+                                <span>Beginner</span>
+                                <span>Expert</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 6:
+                return (
+                    <div className="onboarding-step summary-step">
+                        <h2>Review:</h2>
+                        <div className="profile-summary">
+                            <div className="summary-item">
+                                <h3>Who you are:</h3>
+                                <p>{profile.identity}</p>
+                            </div>
+                            <div className="summary-item">
+                                <h3>Your archetype:</h3>
+                                <p>{profile.archetype}</p>
+                            </div>
+                            <div className="summary-item">
+                                <h3>Your goals with Vizier:</h3>
+                                <p>{profile.goals}</p>
+                            </div>
+                            <div className="summary-item">
+                                <h3>Your AI experience level:</h3>
+                                <p>{profile.experienceLevel} / 10</p>
+                            </div>
+                        </div>
+                        <button 
+                            className="submit-button"
+                            onClick={handleSubmit}
+                        >
+                            Confirm & Continue
+                        </button>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    // Helper function for archetype descriptions
+    const getArchetypeDescription = (type: string) => {
+        switch (type) {
+            case 'Researcher':
+                return 'You focus on deep analysis and discovering new insights.';
+            case 'Business Professional':
+                return 'You need practical solutions for business challenges.';
+            case 'Student':
+                return 'You\'re learning and exploring how AI can help with education.';
+            default:
+                return '';
+        }
+    };
+
+    // Check if the current step is valid for enabling the next button
+    const isNextButtonEnabled = () => {
+        switch (currentStep) {
+            case 2:
+                return profile.identity.length >= 20;
+            case 3:
+                return !!profile.archetype;
+            case 4:
+                return profile.goals.length >= 20;
+            default:
+                return true;
+        }
+    };
+
+    return (
+        <div className="outer-container">
+            <div className="onboarding-container">
+                <div className="onboarding-progress">
+                    <div className="progress-steps">
+                        {[1, 2, 3, 4, 5, 6].map(step => (
+                            <div 
+                                key={step}
+                                className={`progress-step ${currentStep >= step ? 'active' : ''} 
+                                            ${currentStep === step ? 'current' : ''}`}
+                            >
+                                {step < 6 ? step : '✓'}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="progress-line">
+                        <div 
+                            className="progress-completed" 
+                            style={{ width: `${(currentStep - 1) * 20}%` }}
+                        ></div>
+                    </div>
+                </div>
+                
+                <div className="onboarding-content">
+                    {renderStep()}
+                </div>
+                
+                <div className="navigation-buttons">
+                    {currentStep > 1 && (
+                        <button 
+                            className="nav-button prev-button"
+                            onClick={handlePrevious}
+                        >
+                            Previous
+                        </button>
+                    )}
+                    {currentStep < 6 && (
+                        <button 
+                            className={`nav-button next-button ${!isNextButtonEnabled() ? 'disabled' : ''}`}
+                            onClick={handleNext}
+                            disabled={!isNextButtonEnabled()}
+                        >
+                            Next
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default OnBoarding;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\query\query-integrated.tsx
+File type: .tsx
+import { ReactElement, useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  SendHorizonal, Trash2, Plus, Link,
+  Check, XCircle
+} from 'lucide-react';
+import { queryAPI, draftAPI, Source, SourceReview } from '../../../services/api';
+import QueryBar from '../../../components/querybar/querybar';
+
+import './query.css';
+
+// Define Phase type
+type Phase = 'query_refinement' | 'source_refinement' | 'draft_review' | 'finalize';
+
+// Define process stages
+const PROCESS_STAGES = [
+  { id: 'query_received', name: 'Query', description: 'Query received' },
+  { id: 'refinement_completed', name: 'Refinement', description: 'Query refinement' },
+  { id: 'source_review_ready', name: 'Sources', description: 'Source collection and review' },
+  { id: 'draft_ready', name: 'Draft', description: 'Draft generation' },
+  { id: 'draft_approved', name: 'Final', description: 'Draft approval' },
+  { id: 'completed', name: 'Complete', description: 'Process completed' }
+];
+
+function QueryIntegrated() {
+  // No need to use navigate if we're not navigating
+  // const navigate = useNavigate();
+  const urlInputRef = useRef<HTMLInputElement>(null);
+
+  // Basic state
+  const [searchValue, setSearchValue] = useState('');
+  const [showOverlay, setOverlay] = useState(false);
+  const [responseData, setResponseData] = useState('Please wait while we process your request.');
+  const [currentPhase, setCurrentPhase] = useState<Phase>('query_refinement');
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Query refinement states
+  const [isQuerySatisfactory, setIsQuerySatisfactory] = useState(false);
+  const [refinedQuery, setRefinedQuery] = useState<string | null>(null);
+  const [isRefining, setIsRefining] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  
+  // Query ID and processing states
+  const [queryId, setQueryId] = useState<string | null>(null);
+  const [currentStage, setCurrentStage] = useState<string | null>(null);
+  
+  // Sources states
+  const [sources, setSources] = useState<Source[]>([]);
+  const [openSourceIds, setOpenSourceIds] = useState<Set<string>>(new Set());
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [isAddingSource, setIsAddingSource] = useState(false);
+  
+  // Draft states
+  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftContent, setDraftContent] = useState('');
+  const [isDraftGenerating, setIsDraftGenerating] = useState(false);
+
+  // SSE refs
+  const queryEventSourceRef = useRef<EventSource | null>(null);
+  const draftEventSourceRef = useRef<EventSource | null>(null);
+
+  // Focus URL input when shown
+  useEffect(() => {
+    if (showUrlInput && urlInputRef.current) {
+      urlInputRef.current.focus();
+    }
+  }, [showUrlInput]);
+
+  // Setup SSE for query progress
+  useEffect(() => {
+    if (!queryId) return;
+
+    // Create query event source
+    queryEventSourceRef.current = queryAPI.createEventSource(queryId);
+    
+    // Set up event handlers
+    queryEventSourceRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.stage) {
+          setCurrentStage(data.stage);
+          
+          // Handle stage transitions
+          switch (data.stage) {
+            case 'source_review_ready':
+              setCurrentPhase('source_refinement');
+              break;
+            case 'draft_ready':
+              if (data.data && data.data.draft_id) {
+                setDraftId(data.data.draft_id);
+                fetchDraft(data.data.draft_id);
+              }
+              setCurrentPhase('draft_review');
+              break;
+            case 'draft_approved':
+              setCurrentPhase('finalize');
+              break;
+          }
+        }
+      } catch (err) {
+        console.error('Error parsing query event:', err);
+      }
+    };
+    
+    queryEventSourceRef.current.onerror = (err) => {
+      console.error('Query event source error:', err);
+    };
+    
+    // Cleanup function
+    return () => {
+      if (queryEventSourceRef.current) {
+        queryEventSourceRef.current.close();
+      }
+    };
+  }, [queryId]);
+
+  // Setup SSE for draft progress
+  useEffect(() => {
+    if (!draftId) return;
+
+    // Create draft event source
+    draftEventSourceRef.current = draftAPI.createEventSource(draftId);
+    
+    // Set up event handlers
+    draftEventSourceRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'content_update' && data.content) {
+          setDraftContent(data.content);
+          if (data.is_completed) {
+            setIsDraftGenerating(false);
+          }
+        }
+      } catch (err) {
+        console.error('Error parsing draft event:', err);
+      }
+    };
+    
+    draftEventSourceRef.current.onerror = (err) => {
+      console.error('Draft event source error:', err);
+    };
+    
+    // Cleanup function
+    return () => {
+      if (draftEventSourceRef.current) {
+        draftEventSourceRef.current.close();
+      }
+    };
+  }, [draftId]);
+
+  // Fetch sources when needed
+  useEffect(() => {
+    if (currentPhase === 'source_refinement' && queryId) {
+      fetchSources();
+    }
+  }, [currentPhase, queryId]);
+
+  // Function to fetch sources
+  const fetchSources = useCallback(async () => {
+    if (!queryId) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const sourcesData = await queryAPI.getSources(queryId);
+      setSources(sourcesData);
+    } catch (err) {
+      console.error('Error fetching sources:', err);
+      setError('Failed to fetch sources. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [queryId]);
+
+  // Function to fetch draft content
+  const fetchDraft = useCallback(async (id: string) => {
+    try {
+      const draft = await draftAPI.getDraft(id);
+      setDraftContent(draft.content);
+      setDraftId(draft.draft_id);
+    } catch (err) {
+      console.error('Error fetching draft:', err);
+      setError('Failed to fetch draft content. Please try again.');
+    }
+  }, []);
+
+  // Source management: toggle open/close
+  const toggleSourceOpen = (sourceId: string) => {
+    const newSet = new Set(openSourceIds);
+    if (newSet.has(sourceId)) {
+      newSet.delete(sourceId);
+    } else {
+      newSet.add(sourceId);
+    }
+    setOpenSourceIds(newSet);
+  };
+
+  // Add source via URL
+  const addSource = () => {
+    setShowUrlInput(true);
+  };
+
+  // Handle URL submission
+  const handleUrlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sourceUrl.trim() || !queryId) return;
+    
+    setIsAddingSource(true);
+    try {
+      // Mock implementation - in a real app, you'd call an API endpoint
+      const newSource: Source = {
+        id: Date.now().toString(),
+        title: 'New Source',
+        url: sourceUrl,
+        date: new Date().toISOString().split('T')[0],
+        author: '',
+        snippet: '',
+        root: new URL(sourceUrl).hostname
+      };
+      
+      setSources(prev => [...prev, newSource]);
+      setSourceUrl('');
+      setShowUrlInput(false);
+    } catch (err) {
+      console.error('Error adding source:', err);
+      setError('Failed to add source. Please try again.');
+    } finally {
+      setIsAddingSource(false);
+    }
+  };
+
+  // Cancel URL input
+  const cancelUrlInput = () => {
+    setShowUrlInput(false);
+    setSourceUrl('');
+  };
+
+  // Remove a source
+  const removeSource = (sourceId: string) => {
+    setSources(prev => prev.filter(source => source.id !== sourceId));
+    
+    // Also remove from openSourceIds if it's there
+    if (openSourceIds.has(sourceId)) {
+      const newSet = new Set(openSourceIds);
+      newSet.delete(sourceId);
+      setOpenSourceIds(newSet);
+    }
+  };
+
+  // Phase transition handlers
+  const handleConfirm = async () => {
+    if (currentPhase === 'query_refinement') {
+      if (isQuerySatisfactory) {
+        // User is satisfied with the refined query, move to next phase
+        setCurrentPhase('source_refinement');
+      } else {
+        // Show refinement input if they want to refine further
+        setIsRefining(true);
+        if (refinedQuery) {
+          setSearchValue(refinedQuery);
+        }
+      }
+    } else if (currentPhase === 'source_refinement') {
+      // Request draft generation
+      try {
+        setIsDraftGenerating(true);
+        
+        // Prepare source review
+        const sourceReview: SourceReview = {
+          included: sources.map(s => s.url),
+          excluded: [],
+          reranked_urls: sources.map(s => s.url)
+        };
+        
+        // Submit source review
+        await queryAPI.submitSourceReview(queryId as string, sourceReview);
+        
+        // Generate draft
+        const draftResponse = await draftAPI.generateDraft(queryId as string);
+        setDraftId(draftResponse.draft_id);
+        
+        // Move to draft review phase
+        setCurrentPhase('draft_review');
+        
+        // Fetch the draft content
+        fetchDraft(draftResponse.draft_id);
+      } catch (err) {
+        console.error('Error generating draft:', err);
+        setError('Failed to generate draft. Please try again.');
+      } finally {
+        setIsDraftGenerating(false);
+      }
+    } else if (currentPhase === 'draft_review') {
+      // Accept the draft
+      if (draftId) {
+        try {
+          await draftAPI.acceptDraft(draftId);
+          setCurrentPhase('finalize');
+        } catch (err) {
+          console.error('Error accepting draft:', err);
+          setError('Failed to accept draft. Please try again.');
+        }
+      }
+    } else if (currentPhase === 'finalize') {
+      // Reset the app for a new query
+      setOverlay(false);
+      setResponseData('Please wait while we process your request.');
+      setCurrentPhase('query_refinement');
+      setIsQuerySatisfactory(false);
+      setRefinedQuery(null);
+      setConversationId(null);
+      setQueryId(null);
+      setSources([]);
+      setOpenSourceIds(new Set());
+      setDraftContent('');
+      setDraftId(null);
+    }
+  };
+
+  const handleDeny = () => {
+    if (currentPhase === 'query_refinement') {
+      setResponseData('Please wait while we process your request.');
+      setOverlay(false);
+      setIsRefining(false);
+    } else if (currentPhase === 'source_refinement') {
+      setCurrentPhase('query_refinement');
+    } else if (currentPhase === 'draft_review') {
+      setCurrentPhase('source_refinement');
+    } else if (currentPhase === 'finalize') {
+      setCurrentPhase('draft_review');
+    }
+  };
+
+  // Submit search query
+  const handleSend = async () => {
+    if (searchValue.trim() === '') return;
+
+    setOverlay(true);
+    setCurrentPhase('query_refinement');
+    setIsRefining(false);
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      // Store the current query text
+      const currentQuery = searchValue;
+      setResponseData('Processing your query...');
+      
+      if (!queryId) {
+        // Create a new query
+        const newQueryId = await queryAPI.createQuery(currentQuery);
+        setQueryId(newQueryId);
+        
+        // Now refine the query
+        const refinementResult = await queryAPI.refineQuery(newQueryId, currentQuery);
+        
+        setRefinedQuery(refinementResult.refined_query);
+        setConversationId(refinementResult.conversation_id || null);
+        setIsQuerySatisfactory(true);
+        setResponseData(`Your query is ready: ${refinementResult.refined_query}`);
+      } else {
+        // If queryId exists, provide feedback on the previous refinement
+        const refinementResult = await queryAPI.refineQuery(queryId, currentQuery);
+        
+        setRefinedQuery(refinementResult.refined_query);
+        setConversationId(refinementResult.conversation_id || null);
+        setIsQuerySatisfactory(true);
+        setResponseData(`Your query has been refined: ${refinementResult.refined_query}`);
+      }
+    } catch (err) {
+      console.error('Error sending query:', err);
+      setError('Failed to process query. Please try again.');
+      setResponseData('Error processing your request. Please try again.');
+      setIsQuerySatisfactory(false);
+    } finally {
+      setIsLoading(false);
+      setSearchValue(''); // Clear input field
+    }
+  };
+
+  // Handle search input changes
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(event.target.value);
+  };
+
+  // Handle Enter key press in search input
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleSend();
+    }
+  };
+
+  // Render confirmation buttons based on current phase
+  const renderConfirmationButtons = () => {
+    let confirmText = 'Next';
+    let denyText = 'Back';
+    
+    if (currentPhase === 'query_refinement') {
+      confirmText = isQuerySatisfactory ? 'Use This Query' : 'Refine Query';
+      denyText = 'Cancel';
+    } else if (currentPhase === 'source_refinement') {
+      confirmText = 'Generate Draft';
+    } else if (currentPhase === 'draft_review') {
+      confirmText = 'Finalize';
+    } else if (currentPhase === 'finalize') {
+      confirmText = 'Done';
+    }
+    
+    return (
+      <div className="confirmation-buttons">
+        <button className="deny-button" onClick={handleDeny} disabled={isLoading}>
+          <XCircle size={16} />
+          <span>{denyText}</span>
+        </button>
+        <button className="confirm-button" onClick={handleConfirm} disabled={isLoading}>
+          <Check size={16} />
+          <span>{confirmText}</span>
+        </button>
+      </div>
+    );
+  };
+
+  // Input items for the query bar
+  const queryItems: [string, ReactElement][] = [
+    ['Search', <input type="text" className="search-input" placeholder="Ask anything..." value={searchValue} onChange={handleSearchChange} onKeyDown={handleKeyDown} disabled={isLoading} />],
+    ['Enter', <SendHorizonal size={40} className="send-btn" onClick={handleSend} style={{ opacity: isLoading ? 0.5 : 1 }} />]
+  ];
+
+  // Render progress bar
+  const renderProgressBar = () => {
+    const currentIndex = PROCESS_STAGES.findIndex(stage => stage.id === currentStage);
+    const progress = currentIndex >= 0 ? (currentIndex / (PROCESS_STAGES.length - 1)) * 100 : 0;
+    
+    return (
+      <div className="phase-progress">
+        <div className="progress-steps">
+          {PROCESS_STAGES.map((stage) => (
+            <div 
+              key={stage.id}
+              className={`phase-step ${currentStage === stage.id ? 'active' : ''} 
+                        ${PROCESS_STAGES.findIndex(s => s.id === currentStage) >= PROCESS_STAGES.findIndex(s => s.id === stage.id) ? 'completed' : ''}`}
+              title={stage.description}
+            >
+              {stage.name}
+            </div>
+          ))}
+        </div>
+        <div className="progress-line">
+          <div 
+            className="progress-completed" 
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render the current phase content
+  const renderPhase = () => {
+    switch (currentPhase) {
+      case 'query_refinement':
+        return (
+          <div>
+            <h3 className="query-title">{refinedQuery || ''}</h3>
+            <div className="phase-card">
+              <div className="phase-content">
+                <div className="query-refinement-content">
+                  <p className="query-text">{responseData}</p>
+                  
+                  {error && <div className="error-message">{error}</div>}
+                  
+                  {isRefining && !isQuerySatisfactory && (
+                    <div className="query-refinement-input">
+                      <input
+                        type="text"
+                        value={searchValue}
+                        onChange={handleSearchChange}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                        placeholder="Refine your query..."
+                        className="refine-input"
+                        disabled={isLoading}
+                      />
+                      <button 
+                        className="refine-send-btn"
+                        onClick={handleSend}
+                        disabled={isLoading}
+                      >
+                        <SendHorizonal size={16} />
+                        <span>Submit Refined Query</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      case 'source_refinement':
+        return (
+          <div>
+            <div className="phase-card">
+              <div className="phase-header">
+                <span>Sources</span>
+              </div>
+              <div className="phase-content">
+                <div className="sources-content">
+                  {isLoading ? (
+                    <div className="loading">Loading sources...</div>
+                  ) : error ? (
+                    <div className="error-message">{error}</div>
+                  ) : (
+                    <>
+                      <div className="sources-list">
+                        {sources.map((source) => (
+                          <div 
+                            className="source-item" 
+                            key={source.id}
+                          >
+                            <div className="source-header" onClick={() => toggleSourceOpen(source.id)}>
+                              <div className="source-title-container">
+                                <div className="source-title">
+                                  {source.title || 'Untitled Source'}
+                                  <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                    {source.root ? `| ${source.root}` : null}
+                                  </span>
+                                  <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                    {source.date ? `| ${source.date}` : null}
+                                  </span>
+                                </div>
+                                <Trash2 
+                                  size={14} 
+                                  className="delete-icon" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeSource(source.id);
+                                  }} 
+                                />
+                              </div>
+                              
+                              {openSourceIds.has(source.id) && (
+                                <div className="source-details">
+                                  <div className="source-field">
+                                    <span style={{color: 'gray', fontSize: '12px'}}>
+                                      {source.url ? `${source.url} | ` : null}
+                                    </span>
+                                    <span style={{color: 'gray', fontSize: '12px'}}>
+                                      {source.author ? `by ${source.author}` : null}
+                                    </span>
+                                  </div>
+                                  <div className="source-field">
+                                    <label>{source.snippet}</label>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {showUrlInput ? (
+                        <div className="url-input-container">
+                          <form onSubmit={handleUrlSubmit}>
+                            <div className="url-input-field">
+                              <Link size={16} className="url-icon" />
+                              <input 
+                                type="url"
+                                ref={urlInputRef}
+                                placeholder="Enter URL to source..."
+                                value={sourceUrl}
+                                onChange={(e) => setSourceUrl(e.target.value)}
+                                className="url-input"
+                                disabled={isAddingSource}
+                              />
+                              <div className="url-input-actions">
+                                <button 
+                                  type="button"
+                                  className="url-cancel-btn"
+                                  onClick={cancelUrlInput}
+                                  disabled={isAddingSource}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                                <button 
+                                  type="submit"
+                                  className="url-add-btn"
+                                  disabled={isAddingSource}
+                                >
+                                  {isAddingSource ? 'Processing...' : 'Add'}
+                                </button>
+                              </div>
+                            </div>
+                          </form>
+                        </div>
+                      ) : (
+                        <button className="add-source-btn" onClick={addSource}>
+                          <Plus size={14} /> Add Source
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'draft_review':
+        return (
+          <div>
+            <div className="phase-card">
+              <div className="phase-header">
+                <span>Draft</span>
+              </div>
+              <div className="phase-content">
+                <div className="draft-text">
+                  {isDraftGenerating ? 'Generating draft...' : draftContent}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'finalize':
+        return (
+          <div>
+            <div className="phase-card">
+              <div className="phase-header">
+                <span>Finalize</span>
+              </div>
+              <div className="phase-content">
+                <div className="finalize-options">
+                  <p>Your research report is ready! Choose what to do next:</p>
+                  
+                  <div className="finalize-buttons">
+                    <button className="finalize-option">
+                      <span>Export PDF</span>
+                    </button>
+                    <button className="finalize-option">
+                      <span>Share Link</span>
+                    </button>
+                    <button className="finalize-option">
+                      <span>Save to Library</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+        
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div>
+      {/* Overlay container */}
+      <div className={`fade-container ${showOverlay ? 'overlay' : ''}`}>
+        <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>
+          {showOverlay && renderProgressBar()}
+          <div className="phase-containers">
+            {renderPhase()}
+          </div>
+        </div>
+        {renderConfirmationButtons()}
+      </div>
+
+      {/* QueryBar container */}
+      <div className={`query-bar-container ${showOverlay ? 'moved' : ''}`}>
+        <QueryBar li={queryItems} />
+      </div>
+    </div>
+  );
+}
+
+export default QueryIntegrated;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\query\query-with-api.tsx
+File type: .tsx
+import { ReactElement, useState, useEffect, useRef } from 'react';
+import { Textfit } from 'react-textfit';
+import { 
+  SendHorizonal, ChevronDown, ChevronRight, 
+  X, Plus, GripVertical, Check, XCircle, Link 
+} from 'lucide-react';
+import axios from 'axios';
+import QueryBar from '../../../components/querybar/querybar';
+
+import './query.css';
+
+// Define Source interface
+interface Source {
+  id: string;
+  title: string;
+  url: string;
+  date: string;
+  author: string;
+  snippet: string;
+  root: string;
+}
+
+// Define Phase type
+type Phase = 'query_refinement' | 'source_refinement' | 'draft_review';
+
+// API base URL - using the working API endpoint
+const API_BASE_URL = 'http://localhost:8000';
+
+function Query() {
+    const [searchValue, setSearchValue] = useState(''); // State to track the input value
+    const [showOverlay, setOverlay] = useState(false); // State to track the expanding animation
+    const [responseData, setResponseData] = useState('Please wait while we process your request.'); // State to store API response
+    const [currentPhase, setCurrentPhase] = useState<Phase>('query_refinement'); // Track the current phase
+    
+    // Add new state variables for query refinement
+    const [isQuerySatisfactory, setIsQuerySatisfactory] = useState(false);
+    const [queryFeedback, setQueryFeedback] = useState<string | null>(null);
+    const [refinedQuery, setRefinedQuery] = useState<string | null>(null);
+    const [isRefining, setIsRefining] = useState(false);
+    
+    // Collapsible states for each phase
+    const [isQueryOpen, setIsQueryOpen] = useState(true);
+    const [isSourcesOpen, setIsSourcesOpen] = useState(false);
+    const [isDraftOpen, setIsDraftOpen] = useState(false);
+    
+    // Sources state
+    const [sources, setSources] = useState<Source[]>([]);
+    const [openSourceIds, setOpenSourceIds] = useState<Set<string>>(new Set());
+    const [draggedItem, setDraggedItem] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    
+    // Draft content
+    const [draftContent, setDraftContent] = useState('');
+
+    // Add new state for URL input
+    const [showUrlInput, setShowUrlInput] = useState(false);
+    const [sourceUrl, setSourceUrl] = useState('');
+    const [isAddingSource, setIsAddingSource] = useState(false);
+    const urlInputRef = useRef<HTMLInputElement>(null);
+    
+    // Add query ID state to track the current query
+    const [queryId, setQueryId] = useState<string | null>(null);
+    
+    // Effect to focus the URL input field when it appears
+    useEffect(() => {
+        if (showUrlInput && urlInputRef.current) {
+            urlInputRef.current.focus();
+        }
+    }, [showUrlInput]);
+    
+    // Fetch sources on component mount or phase change
+    useEffect(() => {
+        if (currentPhase === 'source_refinement' && queryId) {
+            fetchSources();
+            // Auto-collapse query section when moving to sources
+            setIsQueryOpen(false);
+            setIsSourcesOpen(true);
+        } else if (currentPhase === 'draft_review' && queryId) {
+            // Auto-collapse sources section when moving to draft
+            setIsSourcesOpen(false);
+            setIsDraftOpen(true);
+            fetchDraft();
+        }
+    }, [currentPhase, queryId]);
+    
+    // Authentication header helper function
+    const getAuthHeader = () => {
+        const token = localStorage.getItem('jwt');
+        return { headers: { Authorization: `Bearer ${token}` } };
+    };
+    
+    // Phase transition handlers
+    const handleConfirm = async () => {
+        if (currentPhase === 'query_refinement') {
+            if (isQuerySatisfactory) {
+                setCurrentPhase('source_refinement');
+            } else {
+                // If query is not satisfactory, show refinement interface
+                setIsRefining(true);
+                if (refinedQuery) {
+                    setSearchValue(refinedQuery);
+                }
+            }
+        } else if (currentPhase === 'source_refinement') {
+            // Generate draft from sources
+            if (queryId) {
+                try {
+                    await axios.post(`${API_BASE_URL}/drafts/generate`, { query_id: queryId }, getAuthHeader());
+                    setCurrentPhase('draft_review');
+                } catch (error) {
+                    console.error('Error generating draft:', error);
+                    setError('Failed to generate draft. Please try again later.');
+                }
+            }
+        } else if (currentPhase === 'draft_review') {
+            // Here you would typically submit the final draft
+            console.log('Final draft approved');
+            // Reset the app
+            setOverlay(false);
+            setResponseData('Please wait while we process your request.');
+            setCurrentPhase('query_refinement');
+            setIsQuerySatisfactory(false);
+            setRefinedQuery(null);
+            setQueryFeedback(null);
+        }
+    };
+    
+    const handleDeny = () => {
+        if (currentPhase === 'query_refinement') {
+            // Reset query refinement
+            setResponseData('Please wait while we process your request.');
+            setOverlay(false);
+        } else if (currentPhase === 'source_refinement') {
+            // Go back to query refinement
+            setCurrentPhase('query_refinement');
+            setIsQueryOpen(true);
+            setIsSourcesOpen(false);
+        } else if (currentPhase === 'draft_review') {
+            // Go back to source refinement
+            setCurrentPhase('source_refinement');
+            setIsSourcesOpen(true);
+            setIsDraftOpen(false);
+        }
+    };
+    
+    // Fetch sources from API
+    const fetchSources = async () => {
+        if (!queryId) return;
+        
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+            const response = await axios.get(`${API_BASE_URL}/queries/${queryId}/sources`, getAuthHeader());
+            console.log('Fetched sources:', response.data);
+            
+            // Handle the case where the response might be a string
+            const parsedSources = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+            setSources(parsedSources);
+        } catch (error) {
+            console.error('Error fetching sources:', error);
+            setError('Failed to load sources. Please try again later.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    // Fetch draft content
+    const fetchDraft = async () => {
+        if (!queryId) return;
+        
+        try {
+            const response = await axios.get(`${API_BASE_URL}/drafts/${queryId}`, getAuthHeader());
+            setDraftContent(response.data.content);
+        } catch (error) {
+            console.error('Error fetching draft:', error);
+            setDraftContent('Draft unavailable. There may have been an error generating the content.');
+        }
+    };
+    
+    // Source handlers
+    const toggleSourceOpen = (sourceId: string) => {
+        const newOpenSourceIds = new Set(openSourceIds);
+        if (newOpenSourceIds.has(sourceId)) {
+            newOpenSourceIds.delete(sourceId);
+        } else {
+            newOpenSourceIds.add(sourceId);
+        }
+        setOpenSourceIds(newOpenSourceIds);
+    };
+    
+    // Add source via URL
+    const addSource = () => {
+        // Simply show the URL input field
+        setShowUrlInput(true);
+    };
+    
+    const handleUrlSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!sourceUrl.trim() || !queryId) {
+            return; // Don't submit empty URLs or if no queryId
+        }
+        
+        setIsAddingSource(true);
+        
+        try {
+            // Send the URL to the backend using the correct endpoint
+            const response = await axios.post(`${API_BASE_URL}/queries/${queryId}/sources`, {
+                url: sourceUrl
+            }, getAuthHeader());
+            
+            console.log('Added source:', response.data);
+            
+            // Refresh sources to include the newly added one
+            fetchSources();
+            
+            // Reset the URL input
+            setSourceUrl('');
+            setShowUrlInput(false);
+        } catch (error) {
+            console.error('Error adding source:', error);
+            setError('Failed to add source. Please try again.');
+        } finally {
+            setIsAddingSource(false);
+        }
+    };
+    
+    const cancelUrlInput = () => {
+        setSourceUrl('');
+        setShowUrlInput(false);
+    };
+    
+    const removeSource = async (sourceId: string) => {
+        if (!queryId) return;
+        
+        try {
+            // Optimistically update UI
+            setSources(sources.filter(source => source.id !== sourceId));
+            
+            // Make API call to remove source
+            await axios.delete(`${API_BASE_URL}/queries/${queryId}/sources/${sourceId}`, getAuthHeader());
+            console.log('Removed source:', sourceId);
+        } catch (error) {
+            console.error('Error removing source:', error);
+            fetchSources(); // Refresh sources if there was an error
+        }
+    };
+    
+    const updateSource = async (index: number, field: keyof Source, value: string) => {
+        if (!queryId) return;
+        
+        const sourceToUpdate = sources[index];
+        const updatedSource = { ...sourceToUpdate, [field]: value };
+        
+        try {
+            // Optimistically update UI
+            const newSources = [...sources];
+            newSources[index] = updatedSource;
+            setSources(newSources);
+            
+            // Make API call to update source
+            await axios.put(`${API_BASE_URL}/queries/${queryId}/sources/${sourceToUpdate.id}`, updatedSource, getAuthHeader());
+            console.log('Updated source:', updatedSource);
+        } catch (error) {
+            console.error('Error updating source:', error);
+            fetchSources(); // Refresh sources if there was an error
+        }
+    };
+    
+    // Drag and drop handlers
+    const handleDragStart = (index: number) => {
+        setDraggedItem(index);
+    };
+    
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        
+        if (draggedItem === null) return;
+        
+        const items = [...sources];
+        const draggedItemContent = items[draggedItem];
+        items.splice(draggedItem, 1);
+        items.splice(index, 0, draggedItemContent);
+        
+        setDraggedItem(index);
+        setSources(items);
+    };
+    
+    const handleDragEnd = async () => {
+        if (!queryId) return;
+        
+        setDraggedItem(null);
+        
+        try {
+            // Make API call to update source order
+            await axios.put(`${API_BASE_URL}/queries/${queryId}/sources/order`, {
+                sourceIds: sources.map(source => source.id)
+            }, getAuthHeader());
+            console.log('Updated source order:', sources.map(source => source.id));
+        } catch (error) {
+            console.error('Error updating source order:', error);
+            fetchSources(); // Refresh sources if there was an error
+        }
+    };
+
+    const handleSend = async () => {
+        if (searchValue.trim() === '') {
+            return; // Empty input, do nothing
+        }
+        
+        console.log('Send button pressed with input:', searchValue);
+        setOverlay(true); // Trigger the expanding animation
+        setCurrentPhase('query_refinement');
+        setIsQueryOpen(true);
+        setIsRefining(false);
+
+        // Set overlay-title as query text
+        const overlayTitle = document.querySelector('.overlay-title') as HTMLElement;
+        if (overlayTitle) {
+            overlayTitle.textContent = searchValue;
+        }
+        
+        try {
+            // First, create a new query
+            setResponseData('Processing your query...');
+            const createRes = await axios.post(`${API_BASE_URL}/queries`, { 
+                initial_query: searchValue 
+            }, getAuthHeader());
+            
+            const newQueryId = createRes.data.query_id;
+            setQueryId(newQueryId);
+            
+            // Then, refine the query
+            const refineRes = await axios.post(`${API_BASE_URL}/queries/${newQueryId}/refine`, { 
+                query: searchValue 
+            }, getAuthHeader());
+            
+            const refined = refineRes.data.refined_query;
+            
+            // Set UI states based on the response
+            setIsQuerySatisfactory(true);
+            setRefinedQuery(refined);
+            setQueryFeedback(null);
+            setResponseData(`Your query is ready: ${refined}`);
+            
+        } catch (error) {
+            console.error('Error sending query:', error);
+            setResponseData('Error processing your request. Please try again.');
+            setIsQuerySatisfactory(false);
+        }
+        
+        setSearchValue(''); // Clear input field
+    };
+
+    const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchValue(event.target.value); // Update the state with the input value
+    };
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            handleSend(); // Trigger the send action on Enter press
+        }
+    };
+    
+    // Render confirmation buttons based on current phase
+    const renderConfirmationButtons = () => {
+        let confirmText = 'Next';
+        let denyText = 'Back';
+        
+        if (currentPhase === 'query_refinement') {
+            denyText = 'Cancel';
+        } else if (currentPhase === 'source_refinement') {
+            confirmText = 'Generate Draft';
+        } else if (currentPhase === 'draft_review') {
+            confirmText = 'Approve Draft';
+        }
+        
+        return (
+            <div className="confirmation-buttons">
+                <button className="deny-button" onClick={handleDeny}>
+                    <XCircle size={16} />
+                    <span>{denyText}</span>
+                </button>
+                <button className="confirm-button" onClick={handleConfirm}>
+                    <Check size={16} />
+                    <span>{confirmText}</span>
+                </button>
+            </div>
+        );
+    };
+
+    const queryItems: [string, ReactElement][] = [
+        ['Search', <input type="text" className="search-input" placeholder="Ask anything..." value={searchValue} onChange={handleSearchChange} onKeyDown={handleKeyDown}/>],
+        ['Enter', <SendHorizonal size={40} className="send-btn" onClick={handleSend}/>],
+    ];
+
+    return (
+        <div>
+            {/* Overlay container */}
+            <div className={`fade-container ${showOverlay ? 'overlay' : ''}`}>
+                <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>
+                    <Textfit 
+                        mode="multi"
+                        min={12}
+                        max={48}
+                        style={{
+                            height: '100%',
+                            width: '80%',
+                        }}
+                    >
+                        <p className="overlay-title"></p>
+                    </Textfit>
+                    
+                    {/* Phase containers - always show them all but control visibility with state */}
+                    <div className="phase-containers">
+                        {/* Query Refinement Phase */}
+                        <div className="phase-card">
+                            <div 
+                                className="phase-header" 
+                                onClick={() => setIsQueryOpen(!isQueryOpen)}
+                            >
+                                {isQueryOpen ? 
+                                    <ChevronDown size={16} className="chevron-icon" /> : 
+                                    <ChevronRight size={16} className="chevron-icon" />
+                                }
+                                <span>Query Refinement</span>
+                            </div>
+                            
+                            {isQueryOpen && (
+                                <div className="phase-content">
+                                    <div className="query-refinement-content">
+                                        <p className="query-text">{responseData}</p>
+                                        
+                                        {isRefining && !isQuerySatisfactory && (
+                                            <div className="query-refinement-input">
+                                                <input
+                                                    type="text"
+                                                    value={searchValue}
+                                                    onChange={handleSearchChange}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                                    placeholder="Refine your query..."
+                                                    className="refine-input"
+                                                />
+                                                <button 
+                                                    className="refine-send-btn"
+                                                    onClick={handleSend}
+                                                >
+                                                    <SendHorizonal size={16} />
+                                                    <span>Submit Refined Query</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Source Refinement Phase - only show if we're at or past this phase */}
+                        {(currentPhase === 'source_refinement' || currentPhase === 'draft_review') && (
+                            <div className="phase-card">
+                                <div 
+                                    className="phase-header" 
+                                    onClick={() => setIsSourcesOpen(!isSourcesOpen)}
+                                >
+                                    {isSourcesOpen ? 
+                                        <ChevronDown size={16} className="chevron-icon" /> : 
+                                        <ChevronRight size={16} className="chevron-icon" />
+                                    }
+                                    <span>Sources</span>
+                                </div>
+                                
+                                {isSourcesOpen && (
+                                    <div className="phase-content">
+                                        <div className="sources-content">
+                                            {isLoading ? (
+                                                <div className="loading-indicator">Loading sources...</div>
+                                            ) : error ? (
+                                                <div className="error-message">{error}</div>
+                                            ) : (
+                                                <>
+                                                    <div className="sources-list">
+                                                        {sources.map((source, index) => (
+                                                            <div 
+                                                                key={source.id}
+                                                                className="source-item"
+                                                                draggable={true}
+                                                                onDragStart={() => handleDragStart(index)}
+                                                                onDragOver={(e) => handleDragOver(e, index)}
+                                                                onDragEnd={handleDragEnd}
+                                                            >
+                                                                <div className="source-card">
+                                                                    <div className="source-header">
+                                                                        <div className="drag-handle">
+                                                                            <GripVertical size={14} />
+                                                                        </div>
+                                                                        <div 
+                                                                            className="source-title"
+                                                                            onClick={() => toggleSourceOpen(source.id)}
+                                                                        >
+                                                                            {openSourceIds.has(source.id) ? 
+                                                                                <ChevronDown size={14} /> : 
+                                                                                <ChevronRight size={14} />
+                                                                            }
+                                                                            
+                                                                            <span>{source.title || 'Untitled Source'}</span>
+                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                                {source.root ?
+                                                                                    `| ${source.root}` : null}
+                                                                            </span>
+                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                                {source.date ?
+                                                                                    `| ${source.date}` : null}
+                                                                            </span>
+
+                                                                        </div>
+                                                                        <X 
+                                                                            size={14} 
+                                                                            className="delete-icon" 
+                                                                            onClick={() => removeSource(source.id)} 
+                                                                        />
+                                                                    </div>
+                                                                    
+                                                                    {openSourceIds.has(source.id) && (
+                                                                        <div className="source-details">
+                                                                            <div className="source-field">
+                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                                    {source.url ? `${source.url} | ` : null}
+                                                                                </span>
+                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                                    {source.author ? `by ${source.author}` : null}
+                                                                                </span>
+                                                                                
+                                                                            </div>
+                                                                           
+                                                                        
+                                                                            <div className="source-field">
+                                                                                <label>{source.snippet}</label>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    
+                                                    {/* URL Input Field (conditionally rendered) */}
+                                                    {showUrlInput ? (
+                                                        <div className="url-input-container">
+                                                            <form onSubmit={handleUrlSubmit}>
+                                                                <div className="url-input-field">
+                                                                    <Link size={16} className="url-icon" />
+                                                                    <input 
+                                                                        type="url"
+                                                                        ref={urlInputRef}
+                                                                        placeholder="Enter URL to source..."
+                                                                        value={sourceUrl}
+                                                                        onChange={(e) => setSourceUrl(e.target.value)}
+                                                                        className="url-input"
+                                                                    />
+                                                                    <div className="url-input-actions">
+                                                                        <button 
+                                                                            type="button"
+                                                                            className="url-cancel-btn"
+                                                                            onClick={cancelUrlInput}
+                                                                            disabled={isAddingSource}
+                                                                        >
+                                                                            <X size={16} />
+                                                                        </button>
+                                                                        <button 
+                                                                            type="submit"
+                                                                            className="url-add-btn"
+                                                                            disabled={isAddingSource}
+                                                                        >
+                                                                            {isAddingSource ? 'Processing...' : 'Add'}
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    ) : (
+                                                        <button className="add-source-btn" onClick={addSource}>
+                                                            <Plus size={14} /> Add Source
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        
+                        {/* Draft Review Phase - only show if we're at this phase */}
+                        {currentPhase === 'draft_review' && (
+                            <div className="phase-card">
+                                <div 
+                                    className="phase-header" 
+                                    onClick={() => setIsDraftOpen(!isDraftOpen)}
+                                >
+                                    {isDraftOpen ? 
+                                        <ChevronDown size={16} className="chevron-icon" /> : 
+                                        <ChevronRight size={16} className="chevron-icon" />
+                                    }
+                                    <span>Draft</span>
+                                </div>
+                                
+                                {isDraftOpen && (
+                                    <div className="phase-content">
+                                        <div className="draft-content">
+                                            <p className="draft-text">{draftContent}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* Confirmation buttons */}
+                    {renderConfirmationButtons()}
+                </div>
+            </div>
+
+            {/* QueryBar container */}
+            <div className={`query-bar-container ${showOverlay ? 'moved' : ''}`}>
+                <QueryBar li={queryItems} />
+            </div>
+        </div>
+    );
+}
+
+export default Query;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\query\query.css
+File type: .css
+.search-input {
+    background-color: rgb(46, 46, 46);
+    border: 0px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    width: 100%; /* Fill the parent container */
+    box-sizing: border-box;
+    font-size: 20px;
+    color: white;
+}
+
+.send-btn {
+    background-color: rgb(46, 46, 46);
+    color: rgb(0, 168, 76);
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: rgb(0, 168, 76);
+    border-style: solid;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.fade-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0); /* Start transparent but use white */
+    opacity: 0; /* Hidden by default */
+    transition: opacity 0.3s ease-in-out; /* Just transition opacity */
+    z-index: 0; /* Keep the same z-index all the time */
+    pointer-events: none; /* Prevent it from blocking interactions when invisible */
+    will-change: opacity;
+}
+
+.fade-container.overlay {
+    background-color: #1a1a1a;
+    opacity: 1; /* Fully visible */
+    pointer-events: auto; /* Allow interactions when visible */
+}
+
+.overlay-content {
+    position: absolute; /* Position relative to the .fade-container */
+    top: 5%; /* Position from the top edge */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Only adjust horizontally, not vertically */
+    width: 60%; /* Take up 60% of the width of the .fade-container */
+    max-height: 90vh; /* Limit height to 80% of viewport height */
+    display: flex;
+    flex-direction: column;
+    text-align: left; 
+    overflow-y: auto; /* Add vertical scrollbar when needed */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    padding-bottom: 20px; /* Add some padding at bottom for better scrolling experience */
+}
+
+.overlay-title-container {
+    display: flex;
+    text-align: start;
+    align-content: flex-start;
+}
+
+.overlay-title {
+    display: flex;
+    margin-top: 40px;
+    width: 100%; /* Ensure it takes up the full width of the parent */
+    overflow: visible;
+    text-wrap-mode: wrap;
+    text-wrap-style: stable;
+    white-space: normal; /* Allow text to wrap onto the next line */
+    flex-shrink: 0; /* Prevent shrinking, forcing items below to move down */
+    font-size: 32px;
+}
+
+.query-bar-container {
+    /* No positioning properties here - keeps original document flow position */
+    opacity: 1;
+    width: auto; /* Use natural width */
+    transition: transform 0.5s ease-in-out; /* Only transition the transform property */
+    z-index: 2; /* Increase z-index to ensure it stays above the overlay */
+}
+
+.query-bar-container.moved {
+    opacity: 0;
+    pointer-events: none;
+    /* left: 50%;
+    transform: translateY(40vh) translate(-14%, -50%);
+    z-index: 2; */
+}
+
+/* Sources container */
+.sources {
+    margin: 20px 0;
+    width: 100%;
+}
+
+.sources-card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sources-header {
+    display: flex;
+    align-items: center;
+    background-color: rgb(54, 54, 54);
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 22px;
+}
+
+.sources-header .chevron-icon {
+    margin-right: 8px;
+}
+
+.sources-content {
+    padding: 16px;
+}
+
+/* Source items */
+.sources-list {
+    margin-bottom: 15px;
+    min-height: 50px;
+}
+
+.source-item {
+    margin-bottom: 10px;
+    cursor: move;
+}
+
+.source-item.dragging {
+    opacity: 0.5;
+}
+
+.source-card {
+    color: white;
+    background-color: rgb(32, 32, 32);
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    overflow: hidden;
+}
+
+.source-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: rgb(41, 41, 41);
+}
+
+.drag-handle {
+    cursor: grab;
+    color: #fff;
+    margin-right: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+    color: rgb(0, 168, 76);
+}
+
+.source-title {
+    font-size: 20px;
+    display: flex;
+    align-items: baseline;
+    cursor: pointer;
+    flex-grow: 1;
+    flex-wrap: wrap;
+}
+
+.source-title span {
+    margin-left: 6px;
+    
+}
+
+.delete-icon {
+    cursor: pointer;
+    color: white;
+}
+
+.delete-icon:hover {
+    color: #fc6969;
+}
+
+/* Source details when expanded */
+.source-details {
+    padding: 12px;
+}
+
+.source-field {
+    padding-left: 30px;
+    margin-bottom: 8px;
+}
+
+.source-field label {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 4px;
+    color: white;
+}
+
+.source-field input,
+.source-field textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.source-field textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Add source button */
+.add-source-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: rgb(70, 70, 70);
+    color: rgb(0, 168, 76);
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease; 
+}
+
+.add-source-btn:hover {
+    background-color: rgb(56, 56, 56);
+}
+
+/* Loading indicator and error message */
+.loading-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    color: #777;
+    font-style: italic;
+}
+
+.error-message {
+    padding: 15px;
+    color: #e53e3e;
+    background-color: #fff5f5;
+    border-radius: 6px;
+    border-left: 4px solid #e53e3e;
+    margin-bottom: 15px;
+}
+
+/* Confirmation buttons */
+.confirmation-btns-container {
+    display: flex;
+    margin-top: 50px;
+    transition: transform 0.5s ease-in-out;
+}
+
+.confirmation-buttons {
+    position: fixed; /* Fix the position relative to the viewport */
+    bottom: 100px; /* 10px from the bottom of the window */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Adjust for centering */
+    display: flex;
+    gap: 16px;
+    margin-top: 0; /* Remove margin-top since it's no longer needed */
+}
+  
+.confirm-button, .deny-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    background-color: transparent; /* Match the window background */
+    border: 2px solid; /* Add border */
+    box-shadow: none; /* Remove shadow for simplicity */
+    outline: none; /* Remove focus outline */
+}
+  
+.confirm-button {
+    color: #38a169; /* Green text */
+    border-color: #38a169; /* Green border */
+}
+  
+.confirm-button:hover, .confirm-button:focus {
+    background-color: rgba(56, 161, 105, 0.1); /* Subtle green background on hover */
+    border-color: #38a169; /* Keep the same border color when focused */
+    color: #38a169; /* Keep text color consistent */
+}
+  
+.confirm-button:active {
+    background-color: rgba(56, 161, 105, 0.2); /* Slightly darker green background on click */
+    color: #38a169; /* Ensure text color remains consistent */
+    border-color: #38a169; /* Keep border color consistent */
+}
+  
+.deny-button {
+    color: #e53e3e; /* Red text */
+    border-color: #e53e3e; /* Red border */
+}
+  
+.deny-button:hover, .deny-button:focus {
+    background-color: rgba(229, 62, 62, 0.1); /* Subtle red background on hover */
+    border-color: #e53e3e; /* Keep the same border color when focused */
+    color: #e53e3e; /* Keep text color consistent */
+}
+  
+.deny-button:active {
+    background-color: rgba(229, 62, 62, 0.2); /* Slightly darker red background on click */
+    color: #e53e3e; /* Ensure text color remains consistent */
+    border-color: #e53e3e; /* Keep border color consistent */
+}
+
+.deny-button:checked {
+    background-color: rgb(54, 54, 54); /* Subtle red background on hover */
+    border-color: #1a1a1a;
+}
+
+/* Phase containers */
+.phase-containers {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 5em;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding: 0 10px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Phase card - simplified styling */
+.phase-card {
+    background-color: transparent; /* Remove background */
+    width: 100%;
+    margin-bottom: 24px; /* Slightly more spacing between phases */
+    transition: all 0.3s ease;
+}
+
+.phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.phase-header span {
+    font-size: 24px;
+    font-weight: 600;
+    color: white;
+}
+
+.action-icons {
+    display: flex;
+    align-items: center;
+}
+
+.action-icons span {
+    transition: all 0.2s ease;
+}
+
+.action-icons span:hover {
+    transform: scale(1.1);
+}
+
+.action-results {
+    margin-top: 20px;
+}
+
+.action-status {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.action-success {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    background-color: #e8f5e9;
+    border-radius: 4px;
+    color: #2e7d32;
+}
+
+.result-link {
+    margin-left: 8px;
+    color: #1976d2;
+    text-decoration: none;
+}
+
+.result-link:hover {
+    text-decoration: underline;
+}
+
+.phase-header .chevron-icon {
+    margin-right: 10px;
+    color: #f0f0f0;
+    transition: transform 0.2s ease;
+}
+
+.phase-content {
+    padding: 16px 0; /* Vertical padding only */
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.query-refinement-content {
+    padding: 16px 0; /* Match phase-content padding */
+}
+
+.query-text {
+    color: white;
+    /* background-color: rgba(48, 48, 48, 0.5); */
+    padding: 16px;
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    font-size: 18px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* Sources specific styles */
+.sources-content {
+    padding: 16px;
+}
+
+/* Draft review specific styles */
+.draft-content {
+    padding: 16px;
+}
+
+.draft-text {
+    color: white;
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 18px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+
+.finalize-text {
+    color: white;
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 18px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* URL Input styling */
+.url-input-container {
+    background-color: rgb(32, 32, 32);
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+     padding: 10px;
+
+}
+
+.url-input-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.url-icon {
+    color: #bebebe;
+}
+
+.url-input {
+    flex: 1;
+    background-color: rgb(41, 41, 41);
+    border: 1px solid #363636;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: white;
+    font-size: 14px;
+    width: 100%;
+}
+
+.url-input:focus {
+    outline: none;
+    border-color: rgb(0, 168, 76);
+    box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+}
+
+.url-input-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.url-cancel-btn, .url-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.url-cancel-btn {
+  background-color: rgb(70, 70, 70);
+  color: white;
+}
+
+.url-cancel-btn:hover {
+  background-color: rgb(90, 90, 90);
+}
+
+.url-add-btn {
+  background-color: rgb(70, 70, 70);
+  color: rgb(0, 168, 76);
+  border: rgb(0, 168, 76);
+  border-style: solid;
+  border-width: 2px;
+  transition: background-color 0.3s ease;
+}
+
+.url-add-btn:hover {
+  background-color: rgb(56, 56, 56);
+  border-color: rgb(0, 168, 76);
+  border-width: 2px;
+}
+
+.url-cancel-btn:disabled, .url-add-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Query refinement input styling */
+.query-refinement-input {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.refine-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.refine-send-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.refine-send-btn:hover {
+    background-color: #0055bb;
+}
+
+/* Progress bar styles */
+.phase-progress {
+    padding: 5px;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    height: 36px; /* Fixed height to prevent layout shifts */
+    position: relative; /* For stable positioning */
+}
+
+.phase-step {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    text-align: center;
+    padding: 0; /* Remove padding that could cause height changes */
+    font-weight: 400;
+    display: flex;
+    align-items: center; /* Center text vertically */
+    justify-content: center; /* Center text horizontally */
+    height: 100%; /* Fill the fixed-height container */
+}
+
+.phase-step.active {
+    font-size: 24px;
+    color: white;
+    font-weight: 700;
+    /* No changes to padding or margin that would affect layout */
+}
+
+.progress-line {
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    position: relative;
+    margin: 0 10px;
+    z-index: 0; /* Ensure it stays behind text */
+}
+
+.progress-completed {
+    height: 100%;
+    background-color: rgb(0, 168, 76);
+    transition: width 0.3s ease;
+}
+
+/* Add to your query.css file */
+.query-title {
+  margin-bottom: 15px;
+  word-break: break-word;
+}
+
+
+
+
+
+
+
+.phase-progress {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 30px;
+  }
+  
+  .progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .phase-step {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    position: relative;
+    padding-bottom: 5px;
+  }
+  
+  .phase-step.active {
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+  }
+  
+  .phase-step.completed {
+    color: rgb(0, 168, 76);
+  }
+  
+  .phase-step.completed::after {
+    content: "✓";
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: rgb(0, 168, 76);
+  }
+  
+  .progress-line {
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .progress-completed {
+    height: 100%;
+    background-color: rgb(0, 168, 76);
+    transition: width 0.5s ease;
+  }
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\query\query.tsx
+File type: .tsx
+import { ReactElement, useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  SendHorizonal, ChevronDown, ChevronRight, 
+  Trash2, Plus, GripVertical, Check, XCircle, Link,
+  Podcast, Share, StickyNote
+} from 'lucide-react';
+import { Tooltip } from '@mui/material';
+import axios from 'axios';
+import QueryBar from '../../../components/querybar/querybar';
+
+import './query.css';
+
+// Define Source interface
+interface Source {
+  id: string;
+  title: string;
+  url: string;
+  date: string;
+  author: string;
+  snippet: string;
+  root: string;
+}
+
+// Define Phase type
+type Phase = 'query_refinement' | 'source_refinement' | 'draft_review' | 'finalize';
+
+// API base URL for your actual backend
+const API_BASE_URL = 'http://localhost:';
+
+function Query() {
+    const navigate = useNavigate();
+    // -- State variables --
+    const [searchValue, setSearchValue] = useState('');
+    const [showOverlay, setOverlay] = useState(false);
+    const [responseData, setResponseData] = useState('Please wait while we process your request.');
+    const [currentPhase, setCurrentPhase] = useState<Phase>('query_refinement');
+    
+    // Query refinement states
+    const [isQuerySatisfactory, setIsQuerySatisfactory] = useState(false);
+    const [refinedQuery, setRefinedQuery] = useState<string | null>(null);
+    const [isRefining, setIsRefining] = useState(false);
+    
+    // New state variable to store query ID once a query is created
+    const [queryId, setQueryId] = useState<string | null>(null);
+    
+    // Sources state
+    const [sources, setSources] = useState<Source[]>([]);
+    const [openSourceIds, setOpenSourceIds] = useState<Set<string>>(new Set());
+    const [draggedItem, setDraggedItem] = useState<number | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    
+    // Draft content state
+    const [draftContent, setDraftContent] = useState('');
+
+    // URL input state for adding new sources
+    const [showUrlInput, setShowUrlInput] = useState(false);
+    const [sourceUrl, setSourceUrl] = useState('');
+    const [isAddingSource, setIsAddingSource] = useState(false);
+    const urlInputRef = useRef<HTMLInputElement>(null);
+    
+    // Finalize phase states (Podcast, Share, Post)
+    const [isPodcastGenerating, setIsPodcastGenerating] = useState(false);
+    const [podcastUrl, setPodcastUrl] = useState<string | null>(null);
+    const [isSharing, setIsSharing] = useState(false);
+    const [shareUrl, setShareUrl] = useState<string | null>(null);
+    const [isPosting, setIsPosting] = useState(false);
+    const [postResult, setPostResult] = useState<string | null>(null);
+    
+    // -- Effect: Focus URL input when shown --
+    useEffect(() => {
+        if (showUrlInput && urlInputRef.current) {
+            urlInputRef.current.focus();
+        }
+    }, [showUrlInput]);
+
+    const getAuthHeader = useCallback(() => {
+        const token = localStorage.getItem('jwt');
+        return { headers: { Authorization: `Bearer ${token}` } };
+    }, []);
+
+    // -- Fetch sources from the backend --
+    const fetchSources = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+            const response = await axios.get(`${API_BASE_URL}/queries/${queryId}/sources`, getAuthHeader());
+            const sourcesData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+            setSources(sourcesData);
+            console.log('goofy');
+        } catch (err) {
+            console.error('Error fetching sources:', err);
+            const sourcesData = [
+                {
+                    "id": "13d8cb8c-7e9e-4a25-9a5b-81c5e1e5a7cd",
+                    "url": "https://arxiv.org/abs/2303.00745",
+                    "date": "2023-03-02",
+                    "name": "arXiv",
+                    "root": "arxiv.org",
+                    "title": "Comparing Classical and Quantum Machine Learning for Molecular Property Prediction",
+                    "author": "S. Johri et al.",
+                    "snippet": "This study benchmarks classical and quantum ML models across molecular datasets, highlighting the performance tradeoffs on QM9 and MD17."
+                },
+                {
+                    "id": "8c50c72a-643d-4658-947a-02b657d0ae89",
+                    "url": "https://www.nature.com/articles/s41467-022-29693-y",
+                    "date": "2022-04-12",
+                    "name": "Nature Communications",
+                    "root": "nature.com",
+                    "title": "Quantum chemistry calculations on a superconducting quantum processor",
+                    "author": "Kandala et al.",
+                    "snippet": "IBM's quantum processor is used to simulate molecular ground states with VQE, demonstrating hardware-specific performance bottlenecks."
+                },
+                {
+                    "id": "2fb5b5fc-1ae4-4a1e-a6c1-066f8caa17bb",
+                    "url": "https://www.sciencedirect.com/science/article/pii/S0010465521001692",
+                    "date": "2021-05-01",
+                    "name": "Computer Physics Communications",
+                    "root": "sciencedirect.com",
+                    "title": "SchNetPack: A Deep Learning Toolbox For Atomistic Systems",
+                    "author": "A. T. Unke et al.",
+                    "snippet": "Presents SchNetPack, a modular toolbox implementing neural networks like SchNet for fast and accurate quantum chemistry predictions."
+                }
+                ];
+            setSources(sourcesData);
+            console.log('Set sources: ', sourcesData);
+        } finally {
+            setIsLoading(false);
+            console.log('here');
+        }
+    }, [queryId, getAuthHeader]);
+
+    // -- Fetch draft content from the backend --
+    const fetchDraft = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/drafts/${queryId}`, getAuthHeader());
+            setDraftContent(response.data.content);
+        } catch (error) {
+            console.error('Error fetching draft:', error);
+            setDraftContent(`Response: Refined Research Plan – Comparative Analysis of Pure Quantum, Quantum Machine Learning (QML), and Classical Machine Learning Approaches in Quantum Chemistry
+
+Overview
+This research plan aims to provide a systematic and technically grounded comparative analysis of three major paradigms in quantum chemistry computation: (1) pure quantum algorithms, (2) quantum-enhanced machine learning models (QML), and (3) classical machine learning approaches. The focus is on benchmarking accuracy, scalability, and applicability across key tasks in molecular modeling and materials discovery.
+
+1. Technical Foundations and Methodology
+a. Pure Quantum Approaches
+We will review leading quantum algorithms such as Variational Quantum Eigensolver (VQE), Quantum Phase Estimation (QPE), and Density Matrix Embedding Theory (DMET). Emphasis will be placed on their suitability for near-term quantum devices (NISQ), quantum circuit depth and width requirements, and recent improvements in error mitigation and variational ansätze.
+
+b. QML Approaches
+Survey of hybrid quantum-classical models including quantum kernel methods (e.g., QSVMs), quantum neural networks (QNNs), and variational quantum classifiers. Evaluation will focus on claimed or demonstrated quantum advantage in regression and classification tasks, along with theoretical work on expressivity and generalization bounds.
+
+c. Classical ML Approaches
+Analysis of cutting-edge deep learning models like SchNet, PhysNet, DeepMD, and MPNNs. Benchmarks will include their ability to predict molecular energies, forces, and other quantum observables, as well as their scalability to larger molecular systems and data efficiency on datasets like QM9 and ANI-1x.
+
+2. Performance Benchmarks and Comparative Studies
+We will curate and synthesize results from peer-reviewed studies (2022–present) that directly compare these paradigms. Comparative metrics will include:
+
+Accuracy: Energy/force prediction MAEs, orbital density errors
+
+Scalability: Performance with system size, qubit count, and model parameters
+
+Generalization: Cross-molecule and out-of-distribution robustness
+
+Computational Resources: Wall-clock time, quantum/classical hardware use, training efficiency
+
+Datasets of focus: QM7, QM9, ANI-1x, MD17.
+
+3. Application Domains
+Each paradigm will be evaluated in real-world quantum chemistry scenarios:
+
+Molecular property prediction: HOMO-LUMO gaps, dipole moments, vibrational modes
+
+Reaction pathway modeling: Transition state search using PES predictions
+
+Materials and drug discovery: Ligand binding affinity, conformational sampling, catalyst design
+
+4. Key Experts and Research Groups
+Pure Quantum: Aspuru-Guzik (U Toronto), Garnet Chan (Caltech), IBM Quantum, Google Quantum AI
+
+QML: Maria Schuld & Nathan Killoran (Xanadu), Giuseppe Carleo (EPFL), Kristan Temme (IBM)
+
+Classical ML: Klaus-Robert Müller (TU Berlin), Anatole von Lilienfeld (U Vienna), DeepMind, Microsoft Research
+
+Their latest publications, talks, and GitHub repositories will be used as primary technical sources.
+
+5. Temporal Focus
+The primary literature corpus will center on work from 2022 to present, including arXiv preprints and conference proceedings (NeurIPS, ICML, ACS, PRX Quantum). Earlier foundational papers (2017–2021) will be referenced to contextualize methods and trace algorithmic evolution.
+
+6. Technical Depth and Implementation
+This research will include a hands-on component:
+
+Reproducing or extending open-source implementations (Qiskit, PennyLane, DeepChem)
+
+Running small-scale quantum experiments on IBM Q / IonQ simulators
+
+Benchmarking ML models in PyTorch/TensorFlow on quantum chemistry datasets
+
+Analyzing scaling behavior with increasing molecular complexity
+
+All implementations and evaluations will be documented with clear technical rationale to support reproducibility and transparency.
+
+`);
+        }
+    }, [queryId, getAuthHeader]);
+
+    // -- Effect: Fetch sources or draft content when phase changes --
+    useEffect(() => {
+        if (currentPhase === 'source_refinement') {
+            fetchSources();
+        } else if (currentPhase === 'draft_review') {
+            fetchDraft();
+        }
+    }, [currentPhase, queryId, fetchSources, fetchDraft]);
+
+    // -- Phase transition handlers --
+    const handleConfirm = () => {
+        if (currentPhase === 'query_refinement') {
+            if (isQuerySatisfactory) {
+                // Store current state in sessionStorage before navigating
+                const stateToStore = {
+                    currentPhase,
+                    isQuerySatisfactory,
+                    refinedQuery,
+                    searchValue,
+                    responseData,
+                    queryId
+                };
+                sessionStorage.setItem('queryState', JSON.stringify(stateToStore));
+                // Set flag for first time graph view
+                sessionStorage.setItem('firstTimeGraph', 'true');
+                navigate('/graph');
+            } else {
+                setIsRefining(true);
+                if (refinedQuery) {
+                    setSearchValue(refinedQuery);
+                }
+            }
+        } else if (currentPhase === 'source_refinement') {
+            // Store current state before navigating to graph
+            const stateToStore = {
+                currentPhase: 'source_refinement', // Keep as source_refinement for when returning from graph
+                isQuerySatisfactory,
+                refinedQuery,
+                searchValue,
+                responseData,
+                queryId,
+                sources
+            };
+            sessionStorage.setItem('queryState', JSON.stringify(stateToStore));
+            // Set flag for graph transition to draft
+            sessionStorage.setItem('graphToDraft', 'true');
+            navigate('/graph');
+        } else if (currentPhase === 'draft_review') {
+            setCurrentPhase('finalize');
+        } else if (currentPhase === 'finalize') {
+            // Reset the app for a new query
+            setOverlay(false);
+            setResponseData('Please wait while we process your request.');
+            setCurrentPhase('query_refinement');
+            setIsQuerySatisfactory(false);
+            setRefinedQuery(null);
+            setPodcastUrl(null);
+            setShareUrl(null);
+            setPostResult(null);
+            setQueryId(null);
+            setSources([]);
+            setDraftContent('');
+        }
+    };
+
+    // Add effect to restore state when returning from graph
+    useEffect(() => {
+        const savedState = sessionStorage.getItem('queryState');
+        const graphToDraft = sessionStorage.getItem('graphToDraft');
+        
+        if (savedState) {
+            const {
+                isQuerySatisfactory,
+                refinedQuery,
+                searchValue,
+                responseData,
+                queryId
+            } = JSON.parse(savedState);
+            
+            // If returning from graph with graphToDraft flag, go to draft_review
+            // Otherwise go to source_refinement
+            setCurrentPhase(graphToDraft === 'true' ? 'draft_review' : 'source_refinement');
+            setIsQuerySatisfactory(isQuerySatisfactory);
+            setRefinedQuery(refinedQuery);
+            setSearchValue(searchValue);
+            setResponseData(responseData);
+            setQueryId(queryId);
+            setOverlay(true);
+            
+            // Clear the saved states
+            sessionStorage.removeItem('queryState');
+            if (graphToDraft === 'true') {
+                sessionStorage.removeItem('graphToDraft');
+            }
+        }
+    }, []);
+
+    const handleDeny = () => {
+        if (currentPhase === 'query_refinement') {
+            setResponseData('Please wait while we process your request.');
+            setOverlay(false);
+        } else if (currentPhase === 'source_refinement') {
+            setCurrentPhase('query_refinement');
+        } else if (currentPhase === 'draft_review') {
+            setCurrentPhase('source_refinement');
+        } else if (currentPhase === 'finalize') {
+            setCurrentPhase('draft_review');
+        }
+    };
+
+    // -- Query submission: create and refine --
+    const handleSend = async () => {
+        if (searchValue.trim() === '') return;
+
+        setOverlay(true);
+        setCurrentPhase('query_refinement');
+        setIsRefining(false);
+        const currentQuery = searchValue;
+
+        try {
+            // If no query has been created yet, create one with POST /queries.
+            if (!queryId) {
+                const createRes = await axios.post(`${API_BASE_URL}/queries`, {
+                    initial_query: currentQuery
+                },  getAuthHeader());
+                // Save the returned query_id in state.
+                setQueryId(createRes.data.query_id);
+            }
+
+            console.log(queryId)
+            
+            // Now call the refinement endpoint using the query_id:
+            const refineRes = await axios.post(`${API_BASE_URL}/queries/${queryId || ''}/refine`, {
+                query: currentQuery
+            },  getAuthHeader());
+            
+            // Assume the response returns a refined query.
+            if (refineRes.data.refined_query) {
+                setRefinedQuery(refineRes.data.refined_query);
+                // Set the query as satisfactory (you can add extra logic based on backend flags).
+                setIsQuerySatisfactory(true);
+                setResponseData(`Your query is ready: "${refineRes.data.refined_query}"`);
+            } else {
+                setIsQuerySatisfactory(false);
+                setResponseData('Query refinement needed.');
+            }
+        } catch (error) {
+            console.error('Error sending query:', error);
+            setResponseData(`Refined Research Plan: Comparative Analysis of Pure Quantum, Quantum Machine Learning (QML), and Classical Machine Learning Approaches in Quantum Chemistry
+
+Key Research Components:
+
+1. Technical Foundations and Methodology
+   a. Pure Quantum Approaches: Investigate state-of-the-art quantum algorithms for electronic structure calculations (e.g., VQE, QPE, DMET), their hardware requirements, and scaling behavior.
+   b. QML Approaches: Review quantum-enhanced machine learning models applied to quantum chemistry tasks (e.g., quantum kernel methods, quantum neural networks, hybrid quantum-classical models), focusing on demonstrated or theoretically projected quantum advantage.
+   c. Classical ML Approaches: Examine leading classical ML models for quantum chemistry (e.g., SchNet, PhysNet, DeepMD, message passing neural networks), their data requirements, accuracy benchmarks, and computational efficiency.
+
+2. Performance Benchmarks and Comparative Studies
+   a. Identify recent peer-reviewed head-to-head studies or benchmarks comparing these three paradigms on standard quantum chemistry datasets (QM7, QM9, ANI-1, etc.).
+   b. Specify metrics of comparison: accuracy (e.g., energy prediction errors), scalability, generalization, data efficiency, and computational resources (classical vs. quantum hardware).
+
+3. Application Domains & Real-World Use Cases
+   a. Molecular property prediction (energies, forces, electronic densities)
+   b. Reaction pathway discovery and transition state search
+   c. Materials discovery and drug design
+
+4. Key Experts, Research Groups, and Institutions
+   a. Pure Quantum: Aspuru-Guzik Group (U Toronto), Alán Aspuru-Guzik, Garnet Chan (Caltech), IBM Quantum, Google Quantum AI.
+   b. QML: Maria Schuld (Xanadu), Nathan Killoran (Xanadu), Giuseppe Carleo (EPFL), Kristan Temme (IBM).
+   c. Classical ML in Chemistry: Klaus-Robert Müller (TU Berlin), O. Anatole von Lilienfeld (University of Vienna), DeepMind, Microsoft Research.
+
+5. Temporal Focus
+   a. Emphasize research from the past 18–24 months (2022–present) to capture recent breakthroughs, preprints, and new benchmarks.
+   b. Include foundational works (2017–2021) for methodological context where needed.
+
+6. Technical Depth and Implementation
+   a. Prioritize detailed technical analyses and implementation details`);
+            setIsQuerySatisfactory(true);
+        }
+        
+        // Clear the input field once done.
+        setSearchValue('');
+    };
+
+    // -- Source management: add, remove, drag/reorder --
+    const toggleSourceOpen = (sourceId: string) => {
+        const newSet = new Set(openSourceIds);
+        if (newSet.has(sourceId)) {
+            newSet.delete(sourceId);
+        } else {
+            newSet.add(sourceId);
+        }
+        setOpenSourceIds(newSet);
+    };
+
+    // For this example, the add source functionality is handled locally.
+    // (Later you can call a backend endpoint—e.g. attach/update source set.)
+    const addSource = () => {
+        setShowUrlInput(true);
+    };
+
+    const handleUrlSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!sourceUrl.trim()) return;
+
+        setIsAddingSource(true);
+        try {
+            // Create a new source object from the provided URL.
+            const newSource: Source = {
+                id: Date.now().toString(),
+                title: 'New Source',
+                url: sourceUrl,
+                date: new Date().toISOString().split('T')[0],
+                author: '',
+                snippet: '',
+                root: new URL(sourceUrl).hostname
+            };
+            // Append the new source to the existing list.
+            const updatedSources = [...sources, newSource];
+            setSources(updatedSources);
+            // Optionally, update the backend with the new source set.
+            setSourceUrl('');
+            setShowUrlInput(false);
+        } catch (error) {
+            console.error('Error processing URL:', error);
+        } finally {
+            setIsAddingSource(false);
+        }
+    };
+
+    const cancelUrlInput = () => {
+        setSourceUrl('');
+        setShowUrlInput(false);
+    };
+
+    // Remove source locally (backend update can be added later)
+    const removeSource = async (sourceId: string) => {
+        setSources(sources.filter(source => source.id !== sourceId));
+    };
+
+    // Drag and drop handlers for source ordering
+    const handleDragStart = (index: number) => {
+        setDraggedItem(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (draggedItem === null) return;
+        const items = [...sources];
+        const draggedItemContent = items[draggedItem];
+        items.splice(draggedItem, 1);
+        items.splice(index, 0, draggedItemContent);
+        setDraggedItem(index);
+        setSources(items);
+    };
+
+    const handleDragEnd = async () => {
+        setDraggedItem(null);
+        // If you later implement a backend endpoint for ordering,
+        // you can call it here with the new order.
+    };
+
+    // -- Finalize phase handlers (Podcast, Share, Post) remain unchanged --
+    const generatePodcast = async () => {
+        setIsPodcastGenerating(true);
+        try {
+            const response = await axios.post(`${API_BASE_URL}/generate-podcast`, {
+                content: draftContent,
+                sources: sources
+            },  getAuthHeader());
+            setPodcastUrl(response.data.podcastUrl);
+        } catch (error) {
+            console.error('Error generating podcast:', error);
+            setTimeout(() => {
+                setPodcastUrl('https://example.com/sample-podcast.mp3');
+            }, 1500);
+        } finally {
+            setIsPodcastGenerating(false);
+        }
+    };
+
+    const shareContent = async () => {
+        setIsSharing(true);
+        try {
+            const response = await axios.post(`${API_BASE_URL}/share`, {
+                content: draftContent,
+                sources: sources
+            });
+            setShareUrl(response.data.shareUrl);
+        } catch (error) {
+            console.error('Error sharing content:', error);
+            setTimeout(() => {
+                setShareUrl('https://share.example.com/document/abc123');
+            }, 1000);
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const postContent = async () => {
+        setIsPosting(true);
+        try {
+            const response = await axios.post(`${API_BASE_URL}/post`, {
+                content: draftContent,
+                sources: sources.map(source => source.id)
+            });
+            setPostResult(response.data.message || 'Content posted successfully');
+        } catch (error) {
+            console.error('Error posting content:', error);
+            setTimeout(() => {
+                setPostResult('Content posted successfully (demo)');
+            }, 1500);
+        } finally {
+            setIsPosting(false);
+        }
+    };
+
+    // -- Render confirmation buttons based on the current phase --
+    const renderConfirmationButtons = () => {
+        let confirmText = 'Confirm';
+        let denyText = 'Deny';
+        
+        if (currentPhase === 'query_refinement') {
+            confirmText = isQuerySatisfactory ? 'Use This Query' : 'Refine Query';
+            denyText = 'Cancel';
+        } else if (currentPhase === 'source_refinement') {
+            confirmText = 'Generate Draft';
+            denyText = 'Back to Query';
+        } else if (currentPhase === 'draft_review') {
+            confirmText = 'Finalize';
+            denyText = 'Back to Sources';
+        } else if (currentPhase === 'finalize') {
+            confirmText = 'Done';
+            denyText = 'Back to Draft';
+        }
+        
+        return (
+            <div className="confirmation-buttons">
+                <button className="deny-button" onClick={handleDeny}>
+                    <XCircle size={16} />
+                    <span>{denyText}</span>
+                </button>
+                <button className="confirm-button" onClick={handleConfirm}>
+                    <Check size={16} />
+                    <span>{confirmText}</span>
+                </button>
+            </div>
+        );
+    };
+
+    const queryItems: [string, ReactElement][] = [
+        ['Search', <input type="text" className="search-input" placeholder="Ask anything..." value={searchValue} onChange={(e) => setSearchValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }} />],
+        ['Enter', <SendHorizonal size={40} className="send-btn" onClick={handleSend} />]
+    ];
+
+    const renderProgressBar = () => {
+        const phases = ['Query', 'Sources', 'Draft', 'Finalize'];
+        const currentIndex = 
+            currentPhase === 'query_refinement' ? 0 : 
+            currentPhase === 'source_refinement' ? 1 : 
+            currentPhase === 'draft_review' ? 2 : 3;
+            
+        return (
+            <div className="phase-progress">
+                <div className="progress-steps">
+                    {phases.map((phase, index) => (
+                        <div 
+                            key={phase}
+                            className={`phase-step ${currentIndex === index ? 'active' : ''}`}
+                        >
+                            {phase}
+                        </div>
+                    ))}
+                </div>
+                <div className="progress-line">
+                    <div 
+                        className="progress-completed" 
+                        style={{ width: `${(currentIndex * 100) / 3}%` }}
+                    ></div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderPhase = () => {
+        switch (currentPhase) {
+            case 'query_refinement':
+                return (
+                    <div>
+                        <h3 className="query-title">{refinedQuery || ''}</h3>
+                        <div className="phase-card">
+                            <div className="phase-content">
+                                <div className="query-refinement-content">
+                                    <p className="query-text">{responseData}</p>
+                                    {isRefining && !isQuerySatisfactory && (
+                                        <div className="query-refinement-input">
+                                            <input
+                                                type="text"
+                                                value={searchValue}
+                                                onChange={(e) => setSearchValue(e.target.value)}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                                placeholder="Refine your query..."
+                                                className="refine-input"
+                                            />
+                                            <button 
+                                                className="refine-send-btn"
+                                                onClick={handleSend}
+                                            >
+                                                <SendHorizonal size={16} />
+                                                <span>Submit Refined Query</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 'source_refinement':
+                return (
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Sources</span>
+                            </div>
+                            <div className="phase-content">
+                                <div className="sources-content">
+                                    {isLoading ? (
+                                        <div className="loading-indicator">Loading sources...</div>
+                                    ) : error ? (
+                                        <div className="error-message">{error}</div>
+                                    ) : (
+                                        <>
+                                            <div className="sources-list">
+                                                {sources.map((source, index) => (
+                                                    <div 
+                                                        key={source.id}
+                                                        className="source-item"
+                                                        draggable={true}
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => handleDragOver(e, index)}
+                                                        onDragEnd={handleDragEnd}
+                                                    >
+                                                        <div className="source-card">
+                                                            <div className="source-header">
+                                                                <div className="drag-handle">
+                                                                    <GripVertical size={14} />
+                                                                </div>
+                                                                <div 
+                                                                    className="source-title"
+                                                                    onClick={() => toggleSourceOpen(source.id)}
+                                                                >
+                                                                    {openSourceIds.has(source.id) ? 
+                                                                        <ChevronDown size={14} /> : 
+                                                                        <ChevronRight size={14} />
+                                                                    }
+                                                                    
+                                                                    <span>{source.title || 'Untitled Source'}</span>
+                                                                    <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                        {source.root ? `| ${source.root}` : null}
+                                                                    </span>
+                                                                    <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                        {source.date ? `| ${source.date}` : null}
+                                                                    </span>
+                                                                </div>
+                                                                <Trash2 
+                                                                    size={14} 
+                                                                    className="delete-icon" 
+                                                                    onClick={() => removeSource(source.id)} 
+                                                                />
+                                                            </div>
+                                                            
+                                                            {openSourceIds.has(source.id) && (
+                                                                <div className="source-details">
+                                                                    <div className="source-field">
+                                                                        <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                            {source.url ? `${source.url} | ` : null}
+                                                                        </span>
+                                                                        <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                            {source.author ? `by ${source.author}` : null}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="source-field">
+                                                                        <label>{source.snippet}</label>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            
+                                            {showUrlInput ? (
+                                                <div className="url-input-container">
+                                                    <form onSubmit={handleUrlSubmit}>
+                                                        <div className="url-input-field">
+                                                            <Link size={16} className="url-icon" />
+                                                            <input 
+                                                                type="url"
+                                                                ref={urlInputRef}
+                                                                placeholder="Enter URL to source..."
+                                                                value={sourceUrl}
+                                                                onChange={(e) => setSourceUrl(e.target.value)}
+                                                                className="url-input"
+                                                            />
+                                                            <div className="url-input-actions">
+                                                                <button 
+                                                                    type="button"
+                                                                    className="url-cancel-btn"
+                                                                    onClick={cancelUrlInput}
+                                                                    disabled={isAddingSource}
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                                <button 
+                                                                    type="submit"
+                                                                    className="url-add-btn"
+                                                                    disabled={isAddingSource}
+                                                                >
+                                                                    {isAddingSource ? 'Processing...' : 'Add'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            ) : (
+                                                <button className="add-source-btn" onClick={addSource}>
+                                                    <Plus size={14} /> Add Source
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 'draft_review':
+                return (
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Draft</span>
+                            </div>
+                            <div className="phase-content">
+                                <div className="draft-text">
+                                    {draftContent}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            case 'finalize':
+                return (
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Finalize</span>
+                                <div className="action-icons">
+                                    <Tooltip title="Generate Podcast" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            {podcastUrl ? (
+                                                <a href={podcastUrl} target="_blank" rel="noopener noreferrer">
+                                                    <Podcast size={20} />
+                                                </a>
+                                            ) : (
+                                                <Podcast 
+                                                    size={20} 
+                                                    onClick={generatePodcast}
+                                                    style={{ opacity: isPodcastGenerating ? 0.5 : 1 }}
+                                                />
+                                            )}
+                                        </span>
+                                    </Tooltip>
+                                    
+                                    <Tooltip title="Share Content" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            {shareUrl ? (
+                                                <a href={shareUrl} target="_blank" rel="noopener noreferrer">
+                                                    <Share size={20} />
+                                                </a>
+                                            ) : (
+                                                <Share 
+                                                    size={20} 
+                                                    onClick={shareContent}
+                                                    style={{ opacity: isSharing ? 0.5 : 1 }}
+                                                />
+                                            )}
+                                        </span>
+                                    </Tooltip>
+                                    
+                                    <Tooltip title="Post Content" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            <StickyNote 
+                                                size={20} 
+                                                onClick={postContent}
+                                                style={{ opacity: isPosting || postResult ? 0.5 : 1 }}
+                                            />
+                                        </span>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                            <div className="phase-content">
+                                <div className="finalize-content">
+                                    <div className="finalized-draft">
+                                        <h3>Final Content</h3>
+                                        <div className="finalize-text">
+                                            {draftContent}
+                                            
+Overview
+This research plan aims to provide a systematic and technically grounded comparative analysis of three major paradigms in quantum chemistry computation: (1) pure quantum algorithms, (2) quantum-enhanced machine learning models (QML), and (3) classical machine learning approaches. The focus is on benchmarking accuracy, scalability, and applicability across key tasks in molecular modeling and materials discovery.
+
+1. Technical Foundations and Methodology
+a. Pure Quantum Approaches
+We will review leading quantum algorithms such as Variational Quantum Eigensolver (VQE), Quantum Phase Estimation (QPE), and Density Matrix Embedding Theory (DMET). Emphasis will be placed on their suitability for near-term quantum devices (NISQ), quantum circuit depth and width requirements, and recent improvements in error mitigation and variational ansätze.
+
+b. QML Approaches
+Survey of hybrid quantum-classical models including quantum kernel methods (e.g., QSVMs), quantum neural networks (QNNs), and variational quantum classifiers. Evaluation will focus on claimed or demonstrated quantum advantage in regression and classification tasks, along with theoretical work on expressivity and generalization bounds.
+
+c. Classical ML Approaches
+Analysis of cutting-edge deep learning models like SchNet, PhysNet, DeepMD, and MPNNs. Benchmarks will include their ability to predict molecular energies, forces, and other quantum observables, as well as their scalability to larger molecular systems and data efficiency on datasets like QM9 and ANI-1x.
+
+2. Performance Benchmarks and Comparative Studies
+We will curate and synthesize results from peer-reviewed studies (2022–present) that directly compare these paradigms. Comparative metrics will include:
+
+Accuracy: Energy/force prediction MAEs, orbital density errors
+
+Scalability: Performance with system size, qubit count, and model parameters
+
+Generalization: Cross-molecule and out-of-distribution robustness
+
+Computational Resources: Wall-clock time, quantum/classical hardware use, training efficiency
+
+Datasets of focus: QM7, QM9, ANI-1x, MD17.
+
+3. Application Domains
+Each paradigm will be evaluated in real-world quantum chemistry scenarios:
+
+Molecular property prediction: HOMO-LUMO gaps, dipole moments, vibrational modes
+
+Reaction pathway modeling: Transition state search using PES predictions
+
+Materials and drug discovery: Ligand binding affinity, conformational sampling, catalyst design
+
+4. Key Experts and Research Groups
+Pure Quantum: Aspuru-Guzik (U Toronto), Garnet Chan (Caltech), IBM Quantum, Google Quantum AI
+
+QML: Maria Schuld & Nathan Killoran (Xanadu), Giuseppe Carleo (EPFL), Kristan Temme (IBM)
+
+Classical ML: Klaus-Robert Müller (TU Berlin), Anatole von Lilienfeld (U Vienna), DeepMind, Microsoft Research
+
+Their latest publications, talks, and GitHub repositories will be used as primary technical sources.
+
+5. Temporal Focus
+The primary literature corpus will center on work from 2022 to present, including arXiv preprints and conference proceedings (NeurIPS, ICML, ACS, PRX Quantum). Earlier foundational papers (2017–2021) will be referenced to contextualize methods and trace algorithmic evolution.
+
+6. Technical Depth and Implementation
+This research will include a hands-on component:
+
+Reproducing or extending open-source implementations (Qiskit, PennyLane, DeepChem)
+
+Running small-scale quantum experiments on IBM Q / IonQ simulators
+
+Benchmarking ML models in PyTorch/TensorFlow on quantum chemistry datasets
+
+Analyzing scaling behavior with increasing molecular complexity
+
+All implementations and evaluations will be documented with clear technical rationale to support reproducibility and transparency.
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="action-results">
+                                        {isPodcastGenerating && (
+                                            <div className="action-status">Generating podcast...</div>
+                                        )}
+                                        {podcastUrl && (
+                                            <div className="action-success">
+                                                Podcast generated successfully! 
+                                                <a href={podcastUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                                                    Listen to Podcast
+                                                </a>
+                                            </div>
+                                        )}
+                                        
+                                        {isSharing && (
+                                            <div className="action-status">Sharing content...</div>
+                                        )}
+                                        {shareUrl && (
+                                            <div className="action-success">
+                                                Content shared successfully! 
+                                                <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                                                    View Shared Content
+                                                </a>
+                                            </div>
+                                        )}
+                                        
+                                        {isPosting && (
+                                            <div className="action-status">Posting content...</div>
+                                        )}
+                                        {postResult && (
+                                            <div className="action-success">{postResult}</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+    // -- Main render --
+    return (
+        <div>
+            {/* Overlay container */}
+            <div className={`fade-container ${showOverlay ? 'overlay' : ''}`}>
+                <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>               
+                    {showOverlay && renderProgressBar()}
+                    <div className="phase-containers">
+                        {renderPhase()}
+                    </div>
+                </div>
+                {renderConfirmationButtons()}
+            </div>
+
+            {/* QueryBar container */}
+            <div className={`query-bar-container ${showOverlay ? 'moved' : ''}`}>
+                <QueryBar li={queryItems} />
+            </div>
+        </div>
+    );
+}
+
+export default Query;
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\settings\settings.css
+File type: .css
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\settings\settings.tsx
+File type: .tsx
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\spaces\spaces.css
+File type: .css
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\app\pages\spaces\spaces.tsx
+File type: .tsx
+
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\assets\react.svg
+File type: .svg
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" class="iconify iconify--logos" width="35.93" height="32" preserveAspectRatio="xMidYMid meet" viewBox="0 0 256 228"><path fill="#00D8FF" d="M210.483 73.824a171.49 171.49 0 0 0-8.24-2.597c.465-1.9.893-3.777 1.273-5.621c6.238-30.281 2.16-54.676-11.769-62.708c-13.355-7.7-35.196.329-57.254 19.526a171.23 171.23 0 0 0-6.375 5.848a155.866 155.866 0 0 0-4.241-3.917C100.759 3.829 77.587-4.822 63.673 3.233C50.33 10.957 46.379 33.89 51.995 62.588a170.974 170.974 0 0 0 1.892 8.48c-3.28.932-6.445 1.924-9.474 2.98C17.309 83.498 0 98.307 0 113.668c0 15.865 18.582 31.778 46.812 41.427a145.52 145.52 0 0 0 6.921 2.165a167.467 167.467 0 0 0-2.01 9.138c-5.354 28.2-1.173 50.591 12.134 58.266c13.744 7.926 36.812-.22 59.273-19.855a145.567 145.567 0 0 0 5.342-4.923a168.064 168.064 0 0 0 6.92 6.314c21.758 18.722 43.246 26.282 56.54 18.586c13.731-7.949 18.194-32.003 12.4-61.268a145.016 145.016 0 0 0-1.535-6.842c1.62-.48 3.21-.974 4.76-1.488c29.348-9.723 48.443-25.443 48.443-41.52c0-15.417-17.868-30.326-45.517-39.844Zm-6.365 70.984c-1.4.463-2.836.91-4.3 1.345c-3.24-10.257-7.612-21.163-12.963-32.432c5.106-11 9.31-21.767 12.459-31.957c2.619.758 5.16 1.557 7.61 2.4c23.69 8.156 38.14 20.213 38.14 29.504c0 9.896-15.606 22.743-40.946 31.14Zm-10.514 20.834c2.562 12.94 2.927 24.64 1.23 33.787c-1.524 8.219-4.59 13.698-8.382 15.893c-8.067 4.67-25.32-1.4-43.927-17.412a156.726 156.726 0 0 1-6.437-5.87c7.214-7.889 14.423-17.06 21.459-27.246c12.376-1.098 24.068-2.894 34.671-5.345a134.17 134.17 0 0 1 1.386 6.193ZM87.276 214.515c-7.882 2.783-14.16 2.863-17.955.675c-8.075-4.657-11.432-22.636-6.853-46.752a156.923 156.923 0 0 1 1.869-8.499c10.486 2.32 22.093 3.988 34.498 4.994c7.084 9.967 14.501 19.128 21.976 27.15a134.668 134.668 0 0 1-4.877 4.492c-9.933 8.682-19.886 14.842-28.658 17.94ZM50.35 144.747c-12.483-4.267-22.792-9.812-29.858-15.863c-6.35-5.437-9.555-10.836-9.555-15.216c0-9.322 13.897-21.212 37.076-29.293c2.813-.98 5.757-1.905 8.812-2.773c3.204 10.42 7.406 21.315 12.477 32.332c-5.137 11.18-9.399 22.249-12.634 32.792a134.718 134.718 0 0 1-6.318-1.979Zm12.378-84.26c-4.811-24.587-1.616-43.134 6.425-47.789c8.564-4.958 27.502 2.111 47.463 19.835a144.318 144.318 0 0 1 3.841 3.545c-7.438 7.987-14.787 17.08-21.808 26.988c-12.04 1.116-23.565 2.908-34.161 5.309a160.342 160.342 0 0 1-1.76-7.887Zm110.427 27.268a347.8 347.8 0 0 0-7.785-12.803c8.168 1.033 15.994 2.404 23.343 4.08c-2.206 7.072-4.956 14.465-8.193 22.045a381.151 381.151 0 0 0-7.365-13.322Zm-45.032-43.861c5.044 5.465 10.096 11.566 15.065 18.186a322.04 322.04 0 0 0-30.257-.006c4.974-6.559 10.069-12.652 15.192-18.18ZM82.802 87.83a323.167 323.167 0 0 0-7.227 13.238c-3.184-7.553-5.909-14.98-8.134-22.152c7.304-1.634 15.093-2.97 23.209-3.984a321.524 321.524 0 0 0-7.848 12.897Zm8.081 65.352c-8.385-.936-16.291-2.203-23.593-3.793c2.26-7.3 5.045-14.885 8.298-22.6a321.187 321.187 0 0 0 7.257 13.246c2.594 4.48 5.28 8.868 8.038 13.147Zm37.542 31.03c-5.184-5.592-10.354-11.779-15.403-18.433c4.902.192 9.899.29 14.978.29c5.218 0 10.376-.117 15.453-.343c-4.985 6.774-10.018 12.97-15.028 18.486Zm52.198-57.817c3.422 7.8 6.306 15.345 8.596 22.52c-7.422 1.694-15.436 3.058-23.88 4.071a382.417 382.417 0 0 0 7.859-13.026a347.403 347.403 0 0 0 7.425-13.565Zm-16.898 8.101a358.557 358.557 0 0 1-12.281 19.815a329.4 329.4 0 0 1-23.444.823c-7.967 0-15.716-.248-23.178-.732a310.202 310.202 0 0 1-12.513-19.846h.001a307.41 307.41 0 0 1-10.923-20.627a310.278 310.278 0 0 1 10.89-20.637l-.001.001a307.318 307.318 0 0 1 12.413-19.761c7.613-.576 15.42-.876 23.31-.876H128c7.926 0 15.743.303 23.354.883a329.357 329.357 0 0 1 12.335 19.695a358.489 358.489 0 0 1 11.036 20.54a329.472 329.472 0 0 1-11 20.722Zm22.56-122.124c8.572 4.944 11.906 24.881 6.52 51.026c-.344 1.668-.73 3.367-1.15 5.09c-10.622-2.452-22.155-4.275-34.23-5.408c-7.034-10.017-14.323-19.124-21.64-27.008a160.789 160.789 0 0 1 5.888-5.4c18.9-16.447 36.564-22.941 44.612-18.3ZM128 90.808c12.625 0 22.86 10.235 22.86 22.86s-10.235 22.86-22.86 22.86s-22.86-10.235-22.86-22.86s10.235-22.86 22.86-22.86Z"></path></svg>
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\components\navigation\navbar.css
+File type: .css
+.navbar-menu {
+    background-color: rgb(46, 46, 46);
+    transition: width 0.3s ease;
+    overflow: visible;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    z-index: 0;
+}
+
+.navbar-logo-box {
+    display: flex;
+    align-items: center;
+    padding: 20px 0px;
+}
+
+.navbar-logo-icon{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 8px 70px 8px;
+}
+
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 15px 8px 70px 8px;
+    opacity: 0; /* Initially hidden */
+    /* transform: translateX(-10px); Slide slightly to the left */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth animation */
+}
+.navbar-menu.open .navbar-logo {
+    /* When the navbar-menu is open, animate the logo */
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.burger-container {
+    display: flex;
+    justify-content: left;
+}
+
+.burger {
+    cursor: pointer;
+    padding: 10px;
+    margin: 10px 0px 0px 13px;
+    display: flex;
+    align-items: center;
+    transform-origin: center;
+}
+
+.burger.spin {
+    /* Apply the spin animation */
+    animation: spin 0.7s ease forwards;
+    transform: rotate(270deg);
+}
+
+.navbar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.navbar-li-box {
+    display: flex;
+    align-items: center;
+    border-radius: 10px;
+    margin: 15px 0px;
+    padding: 20px 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.navbar-li-box:hover {
+    /* Apply background color transition on hover */
+    background-color: rgba(209, 209, 209, 0.1); /* Example hover background color */
+}
+
+.navbar-li-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.navbar-li {
+    margin-left: 20px;
+    font-size: 1rem;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0; /* Initially hidden */
+    /* transform: translateX(-10px); Slide slightly to the left */
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Smooth animation */
+}
+
+.navbar-menu.open .navbar-li {
+    /* When the navbar-menu is open, animate the text */
+    opacity: 1;
+    transform: translateX(0);
+}
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\components\navigation\navbar.tsx
+File type: .tsx
+import React, { ReactElement, useState } from "react";
+import { Menu, Hexagon } from "lucide-react";
+import "./navbar.css";
+
+interface NavProps {
+    li: [string, ReactElement][];
+}
+
+const NavBar: React.FC<NavProps> = ({ li }) => {
+    const [window, setWindow] = useState(true);
+    const [isRotated, setIsRotated] = useState(true); // Track rotation state
+
+    const openClose = () => {
+        setIsRotated(!isRotated); // Toggle rotation state
+        setWindow(!window); // Toggle the menu state
+    };
+
+    return (
+        <nav
+            className={`navbar-menu ${window ? "" : "open"}`}
+            style={{ width: window ? 80 : 200 }}
+        >
+            <div className="navbar-logo-box">
+                <div className="navbar-logo-icon">
+                    <Hexagon size={64} />
+                </div>
+                <div className="navbar-logo">Vizier</div>
+            </div>
+            <div className="burger-container">
+                <div
+                    className="burger"
+                    style={{
+                        transform: isRotated ? "rotate(0deg)" : "rotate(270deg)", // Apply rotation
+                        transition: "transform 0.7s ease", // Smooth rotation
+                    }}
+                    onClick={() => openClose()}
+                >
+                    <Menu size={32} />
+                </div>
+            </div>
+            <ul className="navbar-list">
+                {li.map((item, i) => (
+                    <div className="navbar-li-box" key={i}>
+                        <div
+                            className="navbar-li-icon"
+                            style={{ paddingLeft: 20 }}
+                        >
+                            {item[1]}
+                        </div>
+                        <li className="navbar-li">{item[0]}</li>
+                    </div>
+                ))}
+            </ul>
+        </nav>
+    );
+};
+
+export default NavBar;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\components\querybar\querybar.css
+File type: .css
+.querybar-container {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    background-color: rgb(46, 46, 46);
+    border-radius: 15px;
+    gap: 10px; /* gap between elements */
+    padding: 3px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+}
+
+.querybar-item {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0; /* Prevent shrinking by default */
+}
+
+/* Add a new class for the growing item */
+.querybar-item-grow {
+    flex-grow: 1; /* This item will grow to take available space */
+    flex-basis: 0; /* Start from 0 width and grow from there */
+}
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\components\querybar\querybar.tsx
+File type: .tsx
+import React, { ReactElement } from "react";
+import './querybar.css';
+
+interface QueryBarProps {
+    li: [string, ReactElement][];
+}
+
+const QueryBar: React.FC<QueryBarProps> = ({ li }) => {
+    return (
+        <div className="querybar-container">
+            {li.map((item, index) => (
+                <div 
+                    className={`querybar-item ${item[0] === 'Search' ? 'querybar-item-grow' : ''}`} 
+                    key={index}
+                >
+                    {item[1]} {/* Render the element */}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export default QueryBar;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\components\querybar\QueryProgressBar.css
+File type: .css
+.query-progress {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto 30px;
+  }
+  
+  .progress-stages {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .progress-stage {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.3s ease;
+    position: relative;
+    padding-bottom: 5px;
+  }
+  
+  .progress-stage.active {
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+  }
+  
+  .progress-stage.completed {
+    color: rgb(0, 168, 76);
+  }
+  
+  .progress-stage.completed::after {
+    content: "✓";
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    color: rgb(0, 168, 76);
+  }
+  
+  .progress-bar {
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .progress-bar-fill {
+    height: 100%;
+    background-color: rgb(0, 168, 76);
+    transition: width 0.5s ease;
+  }
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\components\querybar\QueryProgressBar.tsx
+File type: .tsx
+import React, { useState, useEffect } from 'react';
+
+interface Stage {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface QueryProgressBarProps {
+  currentStage: string | null;
+  stages: Stage[];
+}
+
+const QueryProgressBar: React.FC<QueryProgressBarProps> = ({ currentStage, stages }) => {
+  const [progress, setProgress] = useState(0);
+  
+  useEffect(() => {
+    if (!currentStage) {
+      setProgress(0);
+      return;
+    }
+    
+    const currentIndex = stages.findIndex(stage => stage.id === currentStage);
+    if (currentIndex >= 0) {
+      const progressPercent = (currentIndex / (stages.length - 1)) * 100;
+      setProgress(progressPercent);
+    }
+  }, [currentStage, stages]);
+  
+  return (
+    <div className="query-progress">
+      <div className="progress-stages">
+        {stages.map((stage, index) => (
+          <div 
+            key={stage.id}
+            className={`progress-stage ${currentStage === stage.id ? 'active' : ''} 
+                      ${stages.findIndex(s => s.id === currentStage) > index ? 'completed' : ''}`}
+            title={stage.description}
+          >
+            {stage.name}
+          </div>
+        ))}
+      </div>
+      <div className="progress-bar">
+        <div 
+          className="progress-bar-fill" 
+          style={{ width: `${progress}%` }}
+        ></div>
+      </div>
+    </div>
+  );
+};
+
+export default QueryProgressBar;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
+
+
+./src\services\api.ts
+File type: .ts
+import axios, { AxiosRequestConfig } from 'axios';
+
+// API base URL - configure based on your environment
+const API_BASE_URL = 'http://localhost:8000';
+
+// Source interface
+export interface Source {
+  id: string;
+  title: string;
+  url: string;
+  date?: string;
+  author?: string;
+  snippet?: string;
+  root?: string;
+}
+
+// Source review interface
+export interface SourceReview {
+  included: string[];
+  excluded: string[];
+  reranked_urls: string[];
+}
+
+// Utility for handling authentication
+const getAuthHeader = (): AxiosRequestConfig => {
+  const token = localStorage.getItem('jwt');
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
+};
+
+// Query API methods
+const queryAPI = {
+  // Create a new query
+  createQuery: async (initialQuery: string): Promise<string> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/queries`,
+        { query: initialQuery },
+        getAuthHeader()
+      );
+      return response.data.query_id;
+    } catch (error) {
+      console.error('Error creating query:', error);
+      throw error;
+    }
+  },
+
+  // Refine a query with initial text
+  refineQuery: async (queryId: string, queryText: string): Promise<any> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/queries/${queryId}/refine`,
+        { query: queryText },
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error refining query:', error);
+      throw error;
+    }
+  },
+
+  // Get sources for a query
+  getSources: async (queryId: string): Promise<Source[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/queries/${queryId}/sources`,
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching sources:', error);
+      throw error;
+    }
+  },
+
+  // Submit source review
+  submitSourceReview: async (queryId: string, review: SourceReview): Promise<any> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/queries/${queryId}/sources/review`,
+        review,
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error submitting source review:', error);
+      throw error;
+    }
+  },
+
+  // Create SSE connection for query progress
+  createEventSource: (queryId: string): EventSource => {
+    return new EventSource(`${API_BASE_URL}/queries/stream/${queryId}`);
+  }
+};
+
+// Draft API methods
+const draftAPI = {
+  // Generate a draft
+  generateDraft: async (queryId: string): Promise<any> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/drafts/generate`,
+        { query_id: queryId },
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error generating draft:', error);
+      throw error;
+    }
+  },
+
+  // Get draft content
+  getDraft: async (draftId: string): Promise<any> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/drafts/${draftId}`,
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching draft:', error);
+      throw error;
+    }
+  },
+
+  // Accept draft
+  acceptDraft: async (draftId: string): Promise<any> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/drafts/${draftId}/accept`,
+        {},
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error accepting draft:', error);
+      throw error;
+    }
+  },
+
+  // Reject draft
+  rejectDraft: async (draftId: string, feedback: string): Promise<any> => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/drafts/${draftId}/reject`,
+        { feedback },
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error rejecting draft:', error);
+      throw error;
+    }
+  },
+
+  // Create SSE connection for draft generation
+  createEventSource: (draftId: string): EventSource => {
+    return new EventSource(`${API_BASE_URL}/drafts/stream/${draftId}`);
+  }
+};
+
+export { queryAPI, draftAPI };
+export default queryAPI;
+
+--------------------------------------------------
+File End
+--------------------------------------------------
