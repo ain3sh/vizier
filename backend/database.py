@@ -1,9 +1,9 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 from databases import Database
 from fastapi import FastAPI
 
-load_dotenv(override=True)
+load_dotenv(find_dotenv("key.env"))
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 database = Database(DATABASE_URL)

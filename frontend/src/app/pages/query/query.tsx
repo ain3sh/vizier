@@ -228,6 +228,8 @@ All implementations and evaluations will be documented with clear technical rati
                     queryId
                 };
                 sessionStorage.setItem('queryState', JSON.stringify(stateToStore));
+                // Set flag for first time graph view
+                sessionStorage.setItem('firstTimeGraph', 'true');
                 navigate('/graph');
             } else {
                 setIsRefining(true);
@@ -236,7 +238,20 @@ All implementations and evaluations will be documented with clear technical rati
                 }
             }
         } else if (currentPhase === 'source_refinement') {
-            setCurrentPhase('draft_review');
+            // Store current state before navigating to graph
+            const stateToStore = {
+                currentPhase: 'source_refinement', // Keep as source_refinement for when returning from graph
+                isQuerySatisfactory,
+                refinedQuery,
+                searchValue,
+                responseData,
+                queryId,
+                sources
+            };
+            sessionStorage.setItem('queryState', JSON.stringify(stateToStore));
+            // Set flag for graph transition to draft
+            sessionStorage.setItem('graphToDraft', 'true');
+            navigate('/graph');
         } else if (currentPhase === 'draft_review') {
             setCurrentPhase('finalize');
         } else if (currentPhase === 'finalize') {
@@ -258,6 +273,8 @@ All implementations and evaluations will be documented with clear technical rati
     // Add effect to restore state when returning from graph
     useEffect(() => {
         const savedState = sessionStorage.getItem('queryState');
+        const graphToDraft = sessionStorage.getItem('graphToDraft');
+        
         if (savedState) {
             const {
                 isQuerySatisfactory,
@@ -267,8 +284,9 @@ All implementations and evaluations will be documented with clear technical rati
                 queryId
             } = JSON.parse(savedState);
             
-            // Always set to source refinement phase when returning from graph
-            setCurrentPhase('source_refinement');
+            // If returning from graph with graphToDraft flag, go to draft_review
+            // Otherwise go to source_refinement
+            setCurrentPhase(graphToDraft === 'true' ? 'draft_review' : 'source_refinement');
             setIsQuerySatisfactory(isQuerySatisfactory);
             setRefinedQuery(refinedQuery);
             setSearchValue(searchValue);
@@ -276,8 +294,11 @@ All implementations and evaluations will be documented with clear technical rati
             setQueryId(queryId);
             setOverlay(true);
             
-            // Clear the saved state
+            // Clear the saved states
             sessionStorage.removeItem('queryState');
+            if (graphToDraft === 'true') {
+                sessionStorage.removeItem('graphToDraft');
+            }
         }
     }, []);
 
