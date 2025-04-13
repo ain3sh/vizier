@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import './onboarding.css';
+import { Slider } from '@mui/material';
 
 const OnBoarding: React.FC = () => {
     const [currentStep, setCurrentStep] = useState(1);
@@ -11,8 +12,6 @@ const OnBoarding: React.FC = () => {
         experienceLevel: '5'
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [isDragging, setIsDragging] = useState(false);
-    const sliderRef = useRef<HTMLInputElement>(null);
 
     const handleInputChange = (field: keyof typeof profile, value: string) => {
         setProfile(prev => ({
@@ -79,13 +78,17 @@ const OnBoarding: React.FC = () => {
         }
     };
 
+    const getAriaValueText = (value: number) => {
+        return `${value}`;
+    };
+
     const renderStep = () => {
         switch (currentStep) {
             case 1:
                 return (
                     <div className="onboarding-step">
                         <h1>Welcome to Vizier!</h1>
-                        <p>Let's get started with a few questions to personalize your experience.</p>
+                        <p style={{fontSize: '20px'}}>Let's get started with a few questions to personalize your experience.</p>
                     </div>
                 );
             case 2:
@@ -157,32 +160,29 @@ const OnBoarding: React.FC = () => {
                         <h2>How are familiar are you with LLMs?</h2>
                         <div className="slider-container">
                             <div className="slider-with-labels">
-                                <span className="slider-label">1</span>
+                                <span className="slider-label">0</span>
                                 <div className="slider-wrapper">
-                                    <input
-                                        ref={sliderRef}
-                                        type="range"
-                                        min="1"
-                                        max="10"
-                                        step="1"
-                                        value={profile.experienceLevel}
-                                        onChange={(e) => handleInputChange('experienceLevel', e.target.value)}
-                                        onMouseDown={() => setIsDragging(true)}
-                                        onMouseUp={() => setIsDragging(false)}
-                                        onTouchStart={() => setIsDragging(true)}
-                                        onTouchEnd={() => setIsDragging(false)}
-                                        className="experience-slider"
+                                    <Slider
+                                        aria-label="Experience Level"
+                                        value={parseInt(profile.experienceLevel)}
+                                        onChange={(_, newValue) => handleInputChange('experienceLevel', newValue.toString())}
+                                        getAriaValueText={getAriaValueText}
+                                        valueLabelDisplay="auto"
+                                        step={1}
+                                        marks
+                                        min={0}
+                                        max={10}
+                                        sx={{
+                                            color: 'rgb(0, 168, 76)',
+                                            '& .MuiSlider-thumb': {
+                                                width: 24,
+                                                height: 24,
+                                            },
+                                            '& .MuiSlider-valueLabel': {
+                                                backgroundColor: 'rgb(0, 168, 76)',
+                                            }
+                                        }}
                                     />
-                                    {isDragging && (
-                                        <div 
-                                            className="slider-tooltip"
-                                            style={{
-                                                left: `calc(${(parseInt(profile.experienceLevel) - 1) * 10}% + ${(parseInt(profile.experienceLevel) - 1) * 2}px)`
-                                            }}
-                                        >
-                                            {profile.experienceLevel}
-                                        </div>
-                                    )}
                                 </div>
                                 <span className="slider-label">10</span>
                             </div>

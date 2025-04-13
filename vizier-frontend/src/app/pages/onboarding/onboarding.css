@@ -68,12 +68,12 @@ p {
 }
 
 .progress-step.active {
-    background-color: #007bff;
+    background-color: rgb(0, 168, 76);
     color: white;
 }
 
 .progress-step.current {
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+    box-shadow: 0 0 0 3px rgb(0, 126, 57);
 }
 
 .progress-line {
@@ -84,11 +84,13 @@ p {
 
 .progress-completed {
     height: 100%;
-    background-color: #007bff;
+    background-color: rgb(0, 168, 76);
     transition: width 0.3s ease;
 }
 
 .onboarding-content {
+    max-width: 1200px;
+    max-height: 800px;
     background-color: #202020;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -101,7 +103,7 @@ p {
 }
 
 .onboarding-input {
-    width: 100%;
+    width: 96%;
     padding: 12px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -130,8 +132,8 @@ p {
 }
 
 .archetype-option.selected {
-    border-color: #007bff;
-    background-color: rgba(0, 123, 255, 0.05);
+    border-color: rgb(0, 168, 76);
+    background-color: rgb(0, 51, 23);
 }
 
 .slider-container {
@@ -158,7 +160,7 @@ p {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: #007bff;
+    background: rgb(0, 168, 76);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -167,7 +169,7 @@ p {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: #007bff;
+    background: rgb(0, 168, 76);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -180,26 +182,35 @@ p {
 
 .slider-tooltip {
     position: absolute;
-    background-color: #007bff;
+    background-color: rgb(0, 168, 76);
     color: white;
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 14px;
     font-weight: bold;
     transform: translateX(-50%);
-    top: -35px;
+    bottom: 40px; /* Position from bottom instead of top */
+    pointer-events: none; /* Prevent tooltip from interfering with slider interaction */
     z-index: 10;
 }
 
+/* Make sure the arrow points directly down to the thumb */
 .slider-tooltip::after {
     content: '';
     position: absolute;
-    top: 100%;
+    bottom: -10px; /* Position at bottom of tooltip */
     left: 50%;
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: #007bff transparent transparent transparent;
+    border-color: rgb(0, 168, 76) transparent transparent transparent;
+}
+
+/* Ensure the slider wrapper has proper positioning */
+.slider-wrapper {
+    flex-grow: 1;
+    position: relative;
+    margin: 0 15px;
 }
 
 .slider-with-labels {
@@ -224,8 +235,8 @@ p {
 .slider-description {
     display: flex;
     justify-content: space-between;
-    font-size: 14px;
-    color: #666;
+    font-size: 16px;
+    color: #c7c7c7;
     margin-top: 5px;
 }
 
@@ -248,7 +259,7 @@ p {
 }
 
 .next-button {
-    background-color: #007bff;
+    background-color: rgb(0, 168, 76);
     color: white;
     margin-left: auto; /* Push to the right */
 }
@@ -278,7 +289,7 @@ p {
 }
 
 .summary-item {
-    border: 2px solid #e0e0e0;
+    border: 2px solid #979797;
     border-radius: 8px;
     padding: 15px;
     background-color: rgba(255, 255, 255, 0.05);
@@ -287,7 +298,7 @@ p {
 
 .summary-item h3 {
     margin-bottom: 10px;
-    color: #007bff;
+    color: rgb(0, 168, 76);
     font-size: 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding-bottom: 8px;
@@ -301,11 +312,11 @@ p {
 }
 
 .submit-button {
-    background-color: #28a745;
+    background-color: rgb(0, 168, 76);
     color: white;
     padding: 12px 24px;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
@@ -315,7 +326,7 @@ p {
 }
 
 .submit-button:hover {
-    background-color: #218838;
+    background-color: rgb(24, 99, 40);
 }
 
 /* Input validation styles */
@@ -339,7 +350,7 @@ p {
 }
 
 .requirement-met {
-    color: #38a169;
+    color: rgb(0, 168, 76);
 }
 
 .character-count {
