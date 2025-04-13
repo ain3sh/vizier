@@ -154,7 +154,7 @@ const OnBoarding: React.FC = () => {
             case 5:
                 return (
                     <div className="onboarding-step">
-                        <h2>How are familiar are you with AI products?</h2>
+                        <h2>How are familiar are you with LLMs?</h2>
                         <div className="slider-container">
                             <div className="slider-with-labels">
                                 <span className="slider-label">1</span>

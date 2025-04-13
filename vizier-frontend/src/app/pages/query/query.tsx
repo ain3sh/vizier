@@ -37,11 +37,6 @@ function Query() {
     const [refinedQuery, setRefinedQuery] = useState<string | null>(null);
     const [isRefining, setIsRefining] = useState(false);
     
-    // Collapsible states for each phase
-    const [isQueryOpen, setIsQueryOpen] = useState(true);
-    const [isSourcesOpen, setIsSourcesOpen] = useState(false);
-    const [isDraftOpen, setIsDraftOpen] = useState(false);
-    
     // Sources state
     const [sources, setSources] = useState<Source[]>([]);
     const [openSourceIds, setOpenSourceIds] = useState<Set<string>>(new Set());
@@ -69,13 +64,7 @@ function Query() {
     useEffect(() => {
         if (currentPhase === 'source_refinement') {
             fetchSources();
-            // Auto-collapse query section when moving to sources
-            setIsQueryOpen(false);
-            setIsSourcesOpen(true);
         } else if (currentPhase === 'draft_review') {
-            // Auto-collapse sources section when moving to draft
-            setIsSourcesOpen(false);
-            setIsDraftOpen(true);
             fetchDraft();
         }
     }, [currentPhase]);
@@ -115,13 +104,9 @@ function Query() {
         } else if (currentPhase === 'source_refinement') {
             // Go back to query refinement
             setCurrentPhase('query_refinement');
-            setIsQueryOpen(true);
-            setIsSourcesOpen(false);
         } else if (currentPhase === 'draft_review') {
             // Go back to source refinement
             setCurrentPhase('source_refinement');
-            setIsSourcesOpen(true);
-            setIsDraftOpen(false);
         }
     };
     
@@ -302,7 +287,6 @@ function Query() {
         console.log('Send button pressed with input:', searchValue);
         setOverlay(true); // Trigger the expanding animation
         setCurrentPhase('query_refinement');
-        setIsQueryOpen(true);
         setIsRefining(false);
 
         // set overlay-title as query text
@@ -365,11 +349,6 @@ Suggested query: "${searchValue} with recent developments and practical applicat
         setSearchValue(''); // Clear input field
     };
 
-    // const handleStop = () => {
-    //     setOverlay(false); // Reset the overlay state when Stop is clicked
-    //     setResponseData('Please wait while we process your request.'); // Reset response text
-    // };
-
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchValue(event.target.value); // Update the state with the input value
     };
@@ -416,220 +395,233 @@ Suggested query: "${searchValue} with recent developments and practical applicat
 
     const queryItems: [string, ReactElement][] = [
         ['Search', <input type="text" className="search-input" placeholder="Ask anything..." value={searchValue} onChange={handleSearchChange} onKeyDown={handleKeyDown}/>],
-        // ['Stop', <CircleStop size={40} className="stop-btn" onClick={handleStop}/>],
         ['Enter', <SendHorizonal size={40} className="send-btn" onClick={handleSend}/>],
     ];
 
+    // Render progress bar
+    const renderProgressBar = () => {
+        const phases = ['Query', 'Sources', 'Draft'];
+        const currentIndex = 
+            currentPhase === 'query_refinement' ? 0 : 
+            currentPhase === 'source_refinement' ? 1 : 2;
+            
+        return (
+            <div className="phase-progress">
+                <div className="progress-steps">
+                    {phases.map((phase, index) => (
+                        <div 
+                            key={phase}
+                            className={`phase-step ${currentIndex >= index ? 'active' : ''} 
+                                       ${currentIndex === index ? 'current' : ''}`}
+                        >
+                            {phase}
+                        </div>
+                    ))}
+                </div>
+                <div className="progress-line">
+                    <div 
+                        className="progress-completed" 
+                        style={{ width: `${currentIndex * 50}%` }}
+                    ></div>
+                </div>
+            </div>
+        );
+    };
+
+    // Modify renderPhase to show only one phase at a time
+    const renderPhase = () => {
+        switch (currentPhase) {
+            case 'query_refinement':
+                return (
+                    <div>
+                        <div className="overlay-title-container">
+                            <h3 className="overlay-title"></h3>
+                        </div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Query Refinement</span>
+                            </div>
+                            <div className="phase-content">
+                                <div className="query-refinement-content">
+                                    <p className="query-text">{responseData}</p>
+                                    
+                                    {isRefining && !isQuerySatisfactory && (
+                                        <div className="query-refinement-input">
+                                            <input
+                                                type="text"
+                                                value={searchValue}
+                                                onChange={handleSearchChange}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                                placeholder="Refine your query..."
+                                                className="refine-input"
+                                            />
+                                            <button 
+                                                className="refine-send-btn"
+                                                onClick={handleSend}
+                                            >
+                                                <SendHorizonal size={16} />
+                                                <span>Submit Refined Query</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            case 'source_refinement':
+                return (
+                    <div className="phase-card">
+                        <div className="phase-header">
+                            <span>Sources</span>
+                        </div>
+                        <div className="phase-content">
+                            <div className="sources-content">
+                                {isLoading ? (
+                                    <div className="loading-indicator">Loading sources...</div>
+                                ) : error ? (
+                                    <div className="error-message">{error}</div>
+                                ) : (
+                                    <>
+                                        <div className="sources-list">
+                                            {sources.map((source, index) => (
+                                                <div 
+                                                    key={source.id}
+                                                    className="source-item"
+                                                    draggable={true}
+                                                    onDragStart={() => handleDragStart(index)}
+                                                    onDragOver={(e) => handleDragOver(e, index)}
+                                                    onDragEnd={handleDragEnd}
+                                                >
+                                                    <div className="source-card">
+                                                        <div className="source-header">
+                                                            <div className="drag-handle">
+                                                                <GripVertical size={14} />
+                                                            </div>
+                                                            <div 
+                                                                className="source-title"
+                                                                onClick={() => toggleSourceOpen(source.id)}
+                                                            >
+                                                                {openSourceIds.has(source.id) ? 
+                                                                    <ChevronDown size={14} /> : 
+                                                                    <ChevronRight size={14} />
+                                                                }
+                                                                
+                                                                <span>{source.title || 'Untitled Source'}</span>
+                                                                <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                    {source.root ?
+                                                                        `| ${source.root}` : null}
+                                                                </span>
+                                                                <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                    {source.date ?
+                                                                        `| ${source.date}` : null}
+                                                                </span>
+                                                            </div>
+                                                            <X 
+                                                                size={14} 
+                                                                className="delete-icon" 
+                                                                onClick={() => removeSource(source.id)} 
+                                                            />
+                                                        </div>
+                                                        
+                                                        {openSourceIds.has(source.id) && (
+                                                            <div className="source-details">
+                                                                <div className="source-field">
+                                                                    <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                        {source.url ? `${source.url} | ` : null}
+                                                                    </span>
+                                                                    <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                        {source.author ? `by ${source.author}` : null}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="source-field">
+                                                                    <label>{source.snippet}</label>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {/* URL Input Field (conditionally rendered) */}
+                                        {showUrlInput ? (
+                                            <div className="url-input-container">
+                                                <form onSubmit={handleUrlSubmit}>
+                                                    <div className="url-input-field">
+                                                        <Link size={16} className="url-icon" />
+                                                        <input 
+                                                            type="url"
+                                                            ref={urlInputRef}
+                                                            placeholder="Enter URL to source..."
+                                                            value={sourceUrl}
+                                                            onChange={(e) => setSourceUrl(e.target.value)}
+                                                            className="url-input"
+                                                        />
+                                                        <div className="url-input-actions">
+                                                            <button 
+                                                                type="button"
+                                                                className="url-cancel-btn"
+                                                                onClick={cancelUrlInput}
+                                                                disabled={isAddingSource}
+                                                            >
+                                                                <X size={16} />
+                                                            </button>
+                                                            <button 
+                                                                type="submit"
+                                                                className="url-add-btn"
+                                                                disabled={isAddingSource}
+                                                            >
+                                                                {isAddingSource ? 'Processing...' : 'Add'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        ) : (
+                                            <button className="add-source-btn" onClick={addSource}>
+                                                <Plus size={14} /> Add Source
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            case 'draft_review':
+                return (
+                    <div className="phase-card">
+                        <div className="phase-header">
+                            <span>Draft</span>
+                        </div>
+                        <div className="phase-content">
+                            <div className="draft-content">
+                                <p className="draft-text">{draftContent}</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            default:
+                return null;
+        }
+    };
+
+    // The main render method
     return (
         <div>
             {/* Overlay container */}
             <div className={`fade-container ${showOverlay ? 'overlay' : ''}`}>
-                <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>
-                    <div className="overlay-title-container">
-                        <h3 className="overlay-title"></h3>
-                    </div>
-                    {/* Phase containers - always show them all but control visibility with state */}
+                <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>               
+                    {/* Add progress bar */}
+                    {showOverlay && renderProgressBar()}
+                    
+                    {/* Phase containers */}
                     <div className="phase-containers">
-                        {/* Query Refinement Phase */}
-                        <div className="phase-card">
-                            <div 
-                                className="phase-header" 
-                                onClick={() => setIsQueryOpen(!isQueryOpen)}
-                            >
-                                {isQueryOpen ? 
-                                    <ChevronDown size={16} className="chevron-icon" /> : 
-                                    <ChevronRight size={16} className="chevron-icon" />
-                                }
-                                <span>Query Refinement</span>
-                            </div>
-                            
-                            {isQueryOpen && (
-                                <div className="phase-content">
-                                    <div className="query-refinement-content">
-                                        <p className="query-text">{responseData}</p>
-                                        
-                                        {isRefining && !isQuerySatisfactory && (
-                                            <div className="query-refinement-input">
-                                                <input
-                                                    type="text"
-                                                    value={searchValue}
-                                                    onChange={handleSearchChange}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                                    placeholder="Refine your query..."
-                                                    className="refine-input"
-                                                />
-                                                <button 
-                                                    className="refine-send-btn"
-                                                    onClick={handleSend}
-                                                >
-                                                    <SendHorizonal size={16} />
-                                                    <span>Submit Refined Query</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Source Refinement Phase - only show if we're at or past this phase */}
-                        {(currentPhase === 'source_refinement' || currentPhase === 'draft_review') && (
-                            <div className="phase-card">
-                                <div 
-                                    className="phase-header" 
-                                    onClick={() => setIsSourcesOpen(!isSourcesOpen)}
-                                >
-                                    {isSourcesOpen ? 
-                                        <ChevronDown size={16} className="chevron-icon" /> : 
-                                        <ChevronRight size={16} className="chevron-icon" />
-                                    }
-                                    <span>Sources</span>
-                                </div>
-                                
-                                {isSourcesOpen && (
-                                    <div className="phase-content">
-                                        <div className="sources-content">
-                                            {isLoading ? (
-                                                <div className="loading-indicator">Loading sources...</div>
-                                            ) : error ? (
-                                                <div className="error-message">{error}</div>
-                                            ) : (
-                                                <>
-                                                    <div className="sources-list">
-                                                        {sources.map((source, index) => (
-                                                            <div 
-                                                                key={source.id}
-                                                                className="source-item"
-                                                                draggable={true}
-                                                                onDragStart={() => handleDragStart(index)}
-                                                                onDragOver={(e) => handleDragOver(e, index)}
-                                                                onDragEnd={handleDragEnd}
-                                                            >
-                                                                <div className="source-card">
-                                                                    <div className="source-header">
-                                                                        <div className="drag-handle">
-                                                                            <GripVertical size={14} />
-                                                                        </div>
-                                                                        <div 
-                                                                            className="source-title"
-                                                                            onClick={() => toggleSourceOpen(source.id)}
-                                                                        >
-                                                                            {openSourceIds.has(source.id) ? 
-                                                                                <ChevronDown size={14} /> : 
-                                                                                <ChevronRight size={14} />
-                                                                            }
-                                                                            
-                                                                            <span>{source.title || 'Untitled Source'}</span>
-                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
-                                                                                {source.root ?
-                                                                                    `| ${source.root}` : null}
-                                                                            </span>
-                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
-                                                                                {source.date ?
-                                                                                    `| ${source.date}` : null}
-                                                                            </span>
-
-                                                                        </div>
-                                                                        <X 
-                                                                            size={14} 
-                                                                            className="delete-icon" 
-                                                                            onClick={() => removeSource(source.id)} 
-                                                                        />
-                                                                    </div>
-                                                                    
-                                                                    {openSourceIds.has(source.id) && (
-                                                                        <div className="source-details">
-                                                                            <div className="source-field">
-                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
-                                                                                    {source.url ? `${source.url} | ` : null}
-                                                                                </span>
-                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
-                                                                                    {source.author ? `by ${source.author}` : null}
-                                                                                </span>
-                                                                                
-                                                                            </div>
-                                                                           
-                                                                        
-                                                                            <div className="source-field">
-                                                                                <label>{source.snippet}</label>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    
-                                                    {/* URL Input Field (conditionally rendered) */}
-                                                    {showUrlInput ? (
-                                                        <div className="url-input-container">
-                                                            <form onSubmit={handleUrlSubmit}>
-                                                                <div className="url-input-field">
-                                                                    <Link size={16} className="url-icon" />
-                                                                    <input 
-                                                                        type="url"
-                                                                        ref={urlInputRef}
-                                                                        placeholder="Enter URL to source..."
-                                                                        value={sourceUrl}
-                                                                        onChange={(e) => setSourceUrl(e.target.value)}
-                                                                        className="url-input"
-                                                                    />
-                                                                    <div className="url-input-actions">
-                                                                        <button 
-                                                                            type="button"
-                                                                            className="url-cancel-btn"
-                                                                            onClick={cancelUrlInput}
-                                                                            disabled={isAddingSource}
-                                                                        >
-                                                                            <X size={16} />
-                                                                        </button>
-                                                                        <button 
-                                                                            type="submit"
-                                                                            className="url-add-btn"
-                                                                            disabled={isAddingSource}
-                                                                        >
-                                                                            {isAddingSource ? 'Processing...' : 'Add'}
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    ) : (
-                                                        <button className="add-source-btn" onClick={addSource}>
-                                                            <Plus size={14} /> Add Source
-                                                        </button>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        
-                        {/* Draft Review Phase - only show if we're at this phase */}
-                        {currentPhase === 'draft_review' && (
-                            <div className="phase-card">
-                                <div 
-                                    className="phase-header" 
-                                    onClick={() => setIsDraftOpen(!isDraftOpen)}
-                                >
-                                    {isDraftOpen ? 
-                                        <ChevronDown size={16} className="chevron-icon" /> : 
-                                        <ChevronRight size={16} className="chevron-icon" />
-                                    }
-                                    <span>Draft</span>
-                                </div>
-                                
-                                {isDraftOpen && (
-                                    <div className="phase-content">
-                                        <div className="draft-content">
-                                            <p className="draft-text">{draftContent}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        {renderPhase()}
                     </div>
                     
                 </div>
