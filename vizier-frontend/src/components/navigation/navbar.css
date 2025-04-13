@@ -1,8 +1,9 @@
 .navbar-menu {
     background-color: rgb(46, 46, 46);
     transition: width 0.3s ease;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    z-index: 0;
 }
 
 .navbar-logo-box {
