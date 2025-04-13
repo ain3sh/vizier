@@ -104,7 +104,7 @@ const OnBoarding: React.FC = () => {
                         />
                         <div className="input-requirements">
                             <span className={profile.identity.length >= 20 ? 'requirement-met' : ''}>
-                                Minimum 20 characters
+                                Minimum 20 characters:
                             </span>
                             <span className="character-count">
                                 {profile.identity.length}/20
@@ -145,7 +145,7 @@ const OnBoarding: React.FC = () => {
                         />
                         <div className="input-requirements">
                             <span className={profile.goals.length >= 20 ? 'requirement-met' : ''}>
-                                Minimum 20 characters
+                                Minimum 20 characters:
                             </span>
                             <span className="character-count">
                                 {profile.goals.length}/20
