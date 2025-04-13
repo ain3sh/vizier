@@ -289,12 +289,8 @@ function Query() {
         setCurrentPhase('query_refinement');
         setIsRefining(false);
 
-        // set overlay-title as query text
-        const overlayTitle = document.querySelector('.overlay-title') as HTMLElement;
-        if (overlayTitle) {
-            overlayTitle.textContent = searchValue;
-        }
-        
+        const currentQuery = searchValue; // Store the current query value
+
         try {
             // Make POST request with searchValue
             setResponseData('Processing your query...');
@@ -346,6 +342,7 @@ Suggested query: "${searchValue} with recent developments and practical applicat
             setIsQuerySatisfactory(true);
         }
         
+        setRefinedQuery(currentQuery); // Save the query for display
         setSearchValue(''); // Clear input field
     };
 
@@ -428,15 +425,13 @@ Suggested query: "${searchValue} with recent developments and practical applicat
         );
     };
 
-    // Modify renderPhase to show only one phase at a time
+    // Modify renderPhase function
     const renderPhase = () => {
         switch (currentPhase) {
             case 'query_refinement':
                 return (
                     <div>
-                        <div className="overlay-title-container">
-                            <h3 className="overlay-title"></h3>
-                        </div>
+                        <h3 className="query-title">{refinedQuery || ''}</h3>
                         <div className="phase-card">
                             <div className="phase-header">
                                 <span>Query Refinement</span>
@@ -472,120 +467,122 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                 
             case 'source_refinement':
                 return (
-                    <div className="phase-card">
-                        <div className="phase-header">
-                            <span>Sources</span>
-                        </div>
-                        <div className="phase-content">
-                            <div className="sources-content">
-                                {isLoading ? (
-                                    <div className="loading-indicator">Loading sources...</div>
-                                ) : error ? (
-                                    <div className="error-message">{error}</div>
-                                ) : (
-                                    <>
-                                        <div className="sources-list">
-                                            {sources.map((source, index) => (
-                                                <div 
-                                                    key={source.id}
-                                                    className="source-item"
-                                                    draggable={true}
-                                                    onDragStart={() => handleDragStart(index)}
-                                                    onDragOver={(e) => handleDragOver(e, index)}
-                                                    onDragEnd={handleDragEnd}
-                                                >
-                                                    <div className="source-card">
-                                                        <div className="source-header">
-                                                            <div className="drag-handle">
-                                                                <GripVertical size={14} />
-                                                            </div>
-                                                            <div 
-                                                                className="source-title"
-                                                                onClick={() => toggleSourceOpen(source.id)}
-                                                            >
-                                                                {openSourceIds.has(source.id) ? 
-                                                                    <ChevronDown size={14} /> : 
-                                                                    <ChevronRight size={14} />
-                                                                }
-                                                                
-                                                                <span>{source.title || 'Untitled Source'}</span>
-                                                                <span style={{display: 'inline-block', fontSize: '14px'}}>
-                                                                    {source.root ?
-                                                                        `| ${source.root}` : null}
-                                                                </span>
-                                                                <span style={{display: 'inline-block', fontSize: '14px'}}>
-                                                                    {source.date ?
-                                                                        `| ${source.date}` : null}
-                                                                </span>
-                                                            </div>
-                                                            <X 
-                                                                size={14} 
-                                                                className="delete-icon" 
-                                                                onClick={() => removeSource(source.id)} 
-                                                            />
-                                                        </div>
-                                                        
-                                                        {openSourceIds.has(source.id) && (
-                                                            <div className="source-details">
-                                                                <div className="source-field">
-                                                                    <span style={{color: 'gray', fontSize: '12px'}}>
-                                                                        {source.url ? `${source.url} | ` : null}
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Sources</span>
+                            </div>
+                            <div className="phase-content">
+                                <div className="sources-content">
+                                    {isLoading ? (
+                                        <div className="loading-indicator">Loading sources...</div>
+                                    ) : error ? (
+                                        <div className="error-message">{error}</div>
+                                    ) : (
+                                        <>
+                                            <div className="sources-list">
+                                                {sources.map((source, index) => (
+                                                    <div 
+                                                        key={source.id}
+                                                        className="source-item"
+                                                        draggable={true}
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => handleDragOver(e, index)}
+                                                        onDragEnd={handleDragEnd}
+                                                    >
+                                                        <div className="source-card">
+                                                            <div className="source-header">
+                                                                <div className="drag-handle">
+                                                                    <GripVertical size={14} />
+                                                                </div>
+                                                                <div 
+                                                                    className="source-title"
+                                                                    onClick={() => toggleSourceOpen(source.id)}
+                                                                >
+                                                                    {openSourceIds.has(source.id) ? 
+                                                                        <ChevronDown size={14} /> : 
+                                                                        <ChevronRight size={14} />
+                                                                    }
+                                                                    
+                                                                    <span>{source.title || 'Untitled Source'}</span>
+                                                                    <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                        {source.root ?
+                                                                            `| ${source.root}` : null}
                                                                     </span>
-                                                                    <span style={{color: 'gray', fontSize: '12px'}}>
-                                                                        {source.author ? `by ${source.author}` : null}
+                                                                    <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                        {source.date ?
+                                                                            `| ${source.date}` : null}
                                                                     </span>
                                                                 </div>
-                                                                <div className="source-field">
-                                                                    <label>{source.snippet}</label>
-                                                                </div>
+                                                                <X 
+                                                                    size={14} 
+                                                                    className="delete-icon" 
+                                                                    onClick={() => removeSource(source.id)} 
+                                                                />
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        
-                                        {/* URL Input Field (conditionally rendered) */}
-                                        {showUrlInput ? (
-                                            <div className="url-input-container">
-                                                <form onSubmit={handleUrlSubmit}>
-                                                    <div className="url-input-field">
-                                                        <Link size={16} className="url-icon" />
-                                                        <input 
-                                                            type="url"
-                                                            ref={urlInputRef}
-                                                            placeholder="Enter URL to source..."
-                                                            value={sourceUrl}
-                                                            onChange={(e) => setSourceUrl(e.target.value)}
-                                                            className="url-input"
-                                                        />
-                                                        <div className="url-input-actions">
-                                                            <button 
-                                                                type="button"
-                                                                className="url-cancel-btn"
-                                                                onClick={cancelUrlInput}
-                                                                disabled={isAddingSource}
-                                                            >
-                                                                <X size={16} />
-                                                            </button>
-                                                            <button 
-                                                                type="submit"
-                                                                className="url-add-btn"
-                                                                disabled={isAddingSource}
-                                                            >
-                                                                {isAddingSource ? 'Processing...' : 'Add'}
-                                                            </button>
+                                                            
+                                                            {openSourceIds.has(source.id) && (
+                                                                <div className="source-details">
+                                                                    <div className="source-field">
+                                                                        <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                            {source.url ? `${source.url} | ` : null}
+                                                                        </span>
+                                                                        <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                            {source.author ? `by ${source.author}` : null}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="source-field">
+                                                                        <label>{source.snippet}</label>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                </form>
+                                                ))}
                                             </div>
-                                        ) : (
-                                            <button className="add-source-btn" onClick={addSource}>
-                                                <Plus size={14} /> Add Source
-                                            </button>
-                                        )}
-                                    </>
-                                )}
+                                            
+                                            {/* URL Input Field (conditionally rendered) */}
+                                            {showUrlInput ? (
+                                                <div className="url-input-container">
+                                                    <form onSubmit={handleUrlSubmit}>
+                                                        <div className="url-input-field">
+                                                            <Link size={16} className="url-icon" />
+                                                            <input 
+                                                                type="url"
+                                                                ref={urlInputRef}
+                                                                placeholder="Enter URL to source..."
+                                                                value={sourceUrl}
+                                                                onChange={(e) => setSourceUrl(e.target.value)}
+                                                                className="url-input"
+                                                            />
+                                                            <div className="url-input-actions">
+                                                                <button 
+                                                                    type="button"
+                                                                    className="url-cancel-btn"
+                                                                    onClick={cancelUrlInput}
+                                                                    disabled={isAddingSource}
+                                                                >
+                                                                    <X size={16} />
+                                                                </button>
+                                                                <button 
+                                                                    type="submit"
+                                                                    className="url-add-btn"
+                                                                    disabled={isAddingSource}
+                                                                >
+                                                                    {isAddingSource ? 'Processing...' : 'Add'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            ) : (
+                                                <button className="add-source-btn" onClick={addSource}>
+                                                    <Plus size={14} /> Add Source
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -593,13 +590,15 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                 
             case 'draft_review':
                 return (
-                    <div className="phase-card">
-                        <div className="phase-header">
-                            <span>Draft</span>
-                        </div>
-                        <div className="phase-content">
-                            <div className="draft-content">
-                                <p className="draft-text">{draftContent}</p>
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Draft</span>
+                            </div>
+                            <div className="phase-content">
+                                <div className="draft-content">
+                                    <p className="draft-text">{draftContent}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
