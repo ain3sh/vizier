@@ -255,7 +255,8 @@
 /* Confirmation buttons */
 .confirmation-btns-container {
     display: flex;
-    margin-top: 50px;;
+    margin-top: 50px;
+    transition: transform 0.5s ease-in-out;
 }
 
 .confirmation-buttons {
