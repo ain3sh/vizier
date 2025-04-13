@@ -7,8 +7,8 @@ interface NavProps {
 }
 
 const NavBar: React.FC<NavProps> = ({ li }) => {
-    const [window, setWindow] = useState(false);
-    const [isRotated, setIsRotated] = useState(false); // Track rotation state
+    const [window, setWindow] = useState(true);
+    const [isRotated, setIsRotated] = useState(true); // Track rotation state
 
     const openClose = () => {
         setIsRotated(!isRotated); // Toggle rotation state

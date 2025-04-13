@@ -1,9 +1,10 @@
 import { ReactElement, useState, useEffect, useRef } from 'react';
-import { Textfit } from 'react-textfit';
 import { 
   SendHorizonal, ChevronDown, ChevronRight, 
-  X, Plus, GripVertical, Check, XCircle, Link 
+  Trash2, Plus, GripVertical, Check, XCircle, Link,
+  Podcast, Share, StickyNote
 } from 'lucide-react';
+import { Tooltip } from '@mui/material';
 import axios from 'axios';
 import QueryBar from '../../../components/querybar/querybar';
 
@@ -21,7 +22,7 @@ interface Source {
 }
 
 // Define Phase type
-type Phase = 'query_refinement' | 'source_refinement' | 'draft_review';
+type Phase = 'query_refinement' | 'source_refinement' | 'draft_review' | 'finalize';
 
 // API base URL
 const API_BASE_URL = 'https://api.example.com';
@@ -37,11 +38,6 @@ function Query() {
     const [queryFeedback, setQueryFeedback] = useState<string | null>(null);
     const [refinedQuery, setRefinedQuery] = useState<string | null>(null);
     const [isRefining, setIsRefining] = useState(false);
-    
-    // Collapsible states for each phase
-    const [isQueryOpen, setIsQueryOpen] = useState(true);
-    const [isSourcesOpen, setIsSourcesOpen] = useState(false);
-    const [isDraftOpen, setIsDraftOpen] = useState(false);
     
     // Sources state
     const [sources, setSources] = useState<Source[]>([]);
@@ -59,6 +55,14 @@ function Query() {
     const [isAddingSource, setIsAddingSource] = useState(false);
     const urlInputRef = useRef<HTMLInputElement>(null);
     
+    // Finalize phase state
+    const [isPodcastGenerating, setIsPodcastGenerating] = useState(false);
+    const [podcastUrl, setPodcastUrl] = useState<string | null>(null);
+    const [isSharing, setIsSharing] = useState(false);
+    const [shareUrl, setShareUrl] = useState<string | null>(null);
+    const [isPosting, setIsPosting] = useState(false);
+    const [postResult, setPostResult] = useState<string | null>(null);
+    
     // Effect to focus the URL input field when it appears
     useEffect(() => {
         if (showUrlInput && urlInputRef.current) {
@@ -70,13 +74,7 @@ function Query() {
     useEffect(() => {
         if (currentPhase === 'source_refinement') {
             fetchSources();
-            // Auto-collapse query section when moving to sources
-            setIsQueryOpen(false);
-            setIsSourcesOpen(true);
         } else if (currentPhase === 'draft_review') {
-            // Auto-collapse sources section when moving to draft
-            setIsSourcesOpen(false);
-            setIsDraftOpen(true);
             fetchDraft();
         }
     }, [currentPhase]);
@@ -96,8 +94,8 @@ function Query() {
         } else if (currentPhase === 'source_refinement') {
             setCurrentPhase('draft_review');
         } else if (currentPhase === 'draft_review') {
-            // Here you would typically submit the final draft
-            console.log('Final draft approved');
+            setCurrentPhase('finalize');
+        } else if (currentPhase === 'finalize') {
             // Reset the app
             setOverlay(false);
             setResponseData('Please wait while we process your request.');
@@ -105,6 +103,9 @@ function Query() {
             setIsQuerySatisfactory(false);
             setRefinedQuery(null);
             setQueryFeedback(null);
+            setPodcastUrl(null);
+            setShareUrl(null);
+            setPostResult(null);
         }
     };
     
@@ -116,13 +117,12 @@ function Query() {
         } else if (currentPhase === 'source_refinement') {
             // Go back to query refinement
             setCurrentPhase('query_refinement');
-            setIsQueryOpen(true);
-            setIsSourcesOpen(false);
         } else if (currentPhase === 'draft_review') {
             // Go back to source refinement
             setCurrentPhase('source_refinement');
-            setIsSourcesOpen(true);
-            setIsDraftOpen(false);
+        } else if (currentPhase === 'finalize') {
+            // Go back to draft review
+            setCurrentPhase('draft_review');
         }
     };
     
@@ -172,7 +172,7 @@ function Query() {
             setDraftContent(response.data.content);
         } catch (error) {
             console.error('Error fetching draft:', error);
-            setDraftContent('Based on the sources you provided, here is a draft that synthesizes the information...\n\nArtificial Intelligence (AI) has rapidly evolved in recent years, becoming increasingly integrated into various aspects of our daily lives and industries. From fundamental concepts in machine learning to advanced applications, AI represents a transformative technology with far-reaching implications.\n\nMachine learning, a core component of AI, relies on algorithms that enable systems to learn from data and improve over time without explicit programming. These principles form the foundation for more complex AI systems that can analyze information, recognize patterns, and make predictions with increasing accuracy.');
+            setDraftContent('Placeholder: Artificial Intelligence (AI) has rapidly evolved in recent years, becoming increasingly integrated into various aspects of our daily lives and industries. From fundamental concepts in machine learning to advanced applications, AI represents a transformative technology with far-reaching implications.\n\nMachine learning, a core component of AI, relies on algorithms that enable systems to learn from data and improve over time without explicit programming. These principles form the foundation for more complex AI systems that can analyze information, recognize patterns, and make predictions with increasing accuracy.');
         }
     };
     
@@ -303,15 +303,10 @@ function Query() {
         console.log('Send button pressed with input:', searchValue);
         setOverlay(true); // Trigger the expanding animation
         setCurrentPhase('query_refinement');
-        setIsQueryOpen(true);
         setIsRefining(false);
 
-        // set overlay-title as query text
-        const overlayTitle = document.querySelector('.overlay-title') as HTMLElement;
-        if (overlayTitle) {
-            overlayTitle.textContent = searchValue;
-        }
-        
+        const currentQuery = searchValue; // Store the current query value
+
         try {
             // Make POST request with searchValue
             setResponseData('Processing your query...');
@@ -363,13 +358,9 @@ Suggested query: "${searchValue} with recent developments and practical applicat
             setIsQuerySatisfactory(true);
         }
         
+        setRefinedQuery(currentQuery); // Save the query for display
         setSearchValue(''); // Clear input field
     };
-
-    // const handleStop = () => {
-    //     setOverlay(false); // Reset the overlay state when Stop is clicked
-    //     setResponseData('Please wait while we process your request.'); // Reset response text
-    // };
 
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchValue(event.target.value); // Update the state with the input value
@@ -381,6 +372,69 @@ Suggested query: "${searchValue} with recent developments and practical applicat
         }
     };
     
+    const generatePodcast = async () => {
+        setIsPodcastGenerating(true);
+        
+        try {
+            const response = await axios.post(`${API_BASE_URL}/generate-podcast`, {
+                content: draftContent,
+                sources: sources
+            });
+            
+            setPodcastUrl(response.data.podcastUrl);
+        } catch (error) {
+            console.error('Error generating podcast:', error);
+            // For demo purposes
+            setTimeout(() => {
+                setPodcastUrl('https://example.com/sample-podcast.mp3');
+            }, 1500);
+        } finally {
+            setIsPodcastGenerating(false);
+        }
+    };
+
+    const shareContent = async () => {
+        setIsSharing(true);
+        
+        try {
+            const response = await axios.post(`${API_BASE_URL}/share`, {
+                content: draftContent,
+                sources: sources
+            });
+            
+            setShareUrl(response.data.shareUrl);
+        } catch (error) {
+            console.error('Error sharing content:', error);
+            // For demo purposes
+            setTimeout(() => {
+                setShareUrl('https://share.example.com/document/abc123');
+            }, 1000);
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const postContent = async () => {
+        setIsPosting(true);
+        
+        try {
+            const response = await axios.post(`${API_BASE_URL}/post`, {
+                content: draftContent,
+                sources: sources.map(source => source.id)
+            });
+            
+            setPostResult(response.data.message || 'Content posted successfully');
+        } catch (error) {
+            console.error('Error posting content:', error);
+            // For demo purposes
+            setTimeout(() => {
+                setPostResult('Content posted successfully (demo)');
+            }, 1500);
+        } finally {
+            setIsPosting(false);
+        }
+    };
+
     // Render confirmation buttons based on current phase
     const renderConfirmationButtons = () => {
         let confirmText = 'Confirm';
@@ -397,8 +451,11 @@ Suggested query: "${searchValue} with recent developments and practical applicat
             confirmText = 'Generate Draft';
             denyText = 'Back to Query';
         } else if (currentPhase === 'draft_review') {
-            confirmText = 'Approve Draft';
+            confirmText = 'Finalize';
             denyText = 'Back to Sources';
+        } else if (currentPhase === 'finalize') {
+            confirmText = 'Done';
+            denyText = 'Back to Draft';
         }
         
         return (
@@ -417,234 +474,339 @@ Suggested query: "${searchValue} with recent developments and practical applicat
 
     const queryItems: [string, ReactElement][] = [
         ['Search', <input type="text" className="search-input" placeholder="Ask anything..." value={searchValue} onChange={handleSearchChange} onKeyDown={handleKeyDown}/>],
-        // ['Stop', <CircleStop size={40} className="stop-btn" onClick={handleStop}/>],
         ['Enter', <SendHorizonal size={40} className="send-btn" onClick={handleSend}/>],
     ];
 
+    // Render progress bar
+    const renderProgressBar = () => {
+        const phases = ['Query', 'Sources', 'Draft', 'Finalize'];
+        const currentIndex = 
+            currentPhase === 'query_refinement' ? 0 : 
+            currentPhase === 'source_refinement' ? 1 : 
+            currentPhase === 'draft_review' ? 2 : 3;
+            
+        return (
+            <div className="phase-progress">
+                <div className="progress-steps">
+                    {phases.map((phase, index) => (
+                        <div 
+                            key={phase}
+                            className={`phase-step ${currentIndex === index ? 'active' : ''}`}
+                        >
+                            {phase}
+                        </div>
+                    ))}
+                </div>
+                <div className="progress-line">
+                    <div 
+                        className="progress-completed" 
+                        style={{ width: `${(currentIndex * 100) / 3}%` }}
+                    ></div>
+                </div>
+            </div>
+        );
+    };
+
+    // Modify renderPhase function
+    const renderPhase = () => {
+        switch (currentPhase) {
+            case 'query_refinement':
+                return (
+                    <div>
+                        <h3 className="query-title">{refinedQuery || ''}</h3>
+                        <div className="phase-card">
+                        
+                            <div className="phase-content">
+                                <div className="query-refinement-content">
+                                    <p className="query-text">{responseData}</p>
+                                    
+                                    {isRefining && !isQuerySatisfactory && (
+                                        <div className="query-refinement-input">
+                                            <input
+                                                type="text"
+                                                value={searchValue}
+                                                onChange={handleSearchChange}
+                                                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                                placeholder="Refine your query..."
+                                                className="refine-input"
+                                            />
+                                            <button 
+                                                className="refine-send-btn"
+                                                onClick={handleSend}
+                                            >
+                                                <SendHorizonal size={16} />
+                                                <span>Submit Refined Query</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            case 'source_refinement':
+                return (
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Sources</span>
+                            </div>
+                            <div className="phase-content">
+                                <div className="sources-content">
+                                    {isLoading ? (
+                                        <div className="loading-indicator">Loading sources...</div>
+                                    ) : error ? (
+                                        <div className="error-message">{error}</div>
+                                    ) : (
+                                        <>
+                                            <div className="sources-list">
+                                                {sources.map((source, index) => (
+                                                    <div 
+                                                        key={source.id}
+                                                        className="source-item"
+                                                        draggable={true}
+                                                        onDragStart={() => handleDragStart(index)}
+                                                        onDragOver={(e) => handleDragOver(e, index)}
+                                                        onDragEnd={handleDragEnd}
+                                                    >
+                                                        <div className="source-card">
+                                                            <div className="source-header">
+                                                                <div className="drag-handle">
+                                                                    <GripVertical size={14} />
+                                                                </div>
+                                                                <div 
+                                                                    className="source-title"
+                                                                    onClick={() => toggleSourceOpen(source.id)}
+                                                                >
+                                                                    {openSourceIds.has(source.id) ? 
+                                                                        <ChevronDown size={14} /> : 
+                                                                        <ChevronRight size={14} />
+                                                                    }
+                                                                    
+                                                                    <span>{source.title || 'Untitled Source'}</span>
+                                                                    <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                        {source.root ?
+                                                                            `| ${source.root}` : null}
+                                                                    </span>
+                                                                    <span style={{display: 'inline-block', fontSize: '14px'}}>
+                                                                        {source.date ?
+                                                                            `| ${source.date}` : null}
+                                                                    </span>
+                                                                </div>
+                                                                <Trash2 
+                                                                    size={14} 
+                                                                    className="delete-icon" 
+                                                                    onClick={() => removeSource(source.id)} 
+                                                                />
+                                                            </div>
+                                                            
+                                                            {openSourceIds.has(source.id) && (
+                                                                <div className="source-details">
+                                                                    <div className="source-field">
+                                                                        <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                            {source.url ? `${source.url} | ` : null}
+                                                                        </span>
+                                                                        <span style={{color: 'gray', fontSize: '12px'}}>
+                                                                            {source.author ? `by ${source.author}` : null}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="source-field">
+                                                                        <label>{source.snippet}</label>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            
+                                            {/* URL Input Field (conditionally rendered) */}
+                                            {showUrlInput ? (
+                                                <div className="url-input-container">
+                                                    <form onSubmit={handleUrlSubmit}>
+                                                        <div className="url-input-field">
+                                                            <Link size={16} className="url-icon" />
+                                                            <input 
+                                                                type="url"
+                                                                ref={urlInputRef}
+                                                                placeholder="Enter URL to source..."
+                                                                value={sourceUrl}
+                                                                onChange={(e) => setSourceUrl(e.target.value)}
+                                                                className="url-input"
+                                                            />
+                                                            <div className="url-input-actions">
+                                                                <button 
+                                                                    type="button"
+                                                                    className="url-cancel-btn"
+                                                                    onClick={cancelUrlInput}
+                                                                    disabled={isAddingSource}
+                                                                >
+                                                                    <Trash2 size={16} />
+                                                                </button>
+                                                                <button 
+                                                                    type="submit"
+                                                                    className="url-add-btn"
+                                                                    disabled={isAddingSource}
+                                                                >
+                                                                    {isAddingSource ? 'Processing...' : 'Add'}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            ) : (
+                                                <button className="add-source-btn" onClick={addSource}>
+                                                    <Plus size={14} /> Add Source
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            case 'draft_review':
+                return (
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Draft</span>
+                            </div>
+                            <div className="phase-content">
+                                <div className="draft-content">
+                                    <p className="draft-text">{draftContent}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+
+            case 'finalize':
+                return (
+                    <div>
+                        <div className="phase-card">
+                            <div className="phase-header">
+                                <span>Finalize</span>
+                                <div className="action-icons">
+                                    <Tooltip title="Generate Podcast" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            {podcastUrl ? (
+                                                <a href={podcastUrl} target="_blank" rel="noopener noreferrer">
+                                                    <Podcast size={20} color="#4CAF50" />
+                                                </a>
+                                            ) : (
+                                                <Podcast 
+                                                    size={20} 
+                                                    onClick={generatePodcast}
+                                                    color={isPodcastGenerating ? "#999" : "#333"}
+                                                    style={{ opacity: isPodcastGenerating ? 0.5 : 1 }}
+                                                />
+                                            )}
+                                        </span>
+                                    </Tooltip>
+                                    
+                                    <Tooltip title="Share Content" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            {shareUrl ? (
+                                                <a href={shareUrl} target="_blank" rel="noopener noreferrer">
+                                                    <Share size={20} color="#2196F3" />
+                                                </a>
+                                            ) : (
+                                                <Share 
+                                                    size={20} 
+                                                    onClick={shareContent}
+                                                    color={isSharing ? "#999" : "#333"}
+                                                    style={{ opacity: isSharing ? 0.5 : 1 }}
+                                                />
+                                            )}
+                                        </span>
+                                    </Tooltip>
+                                    
+                                    <Tooltip title="Post Content" arrow>
+                                        <span style={{ display: 'inline-block', margin: '0 8px', cursor: 'pointer' }}>
+                                            <StickyNote 
+                                                size={20} 
+                                                onClick={postContent}
+                                                color={isPosting || postResult ? "#999" : "#333"}
+                                                style={{ opacity: isPosting || postResult ? 0.5 : 1 }}
+                                            />
+                                        </span>
+                                    </Tooltip>
+                                </div>
+                            </div>
+                            <div className="phase-content">
+                                <div className="finalize-content">
+                                    <div className="finalized-draft">
+                                        <h3>Final Content</h3>
+                                        <div className="draft-container">
+                                            <p>{draftContent}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Status messages for actions */}
+                                    <div className="action-results">
+                                        {isPodcastGenerating && (
+                                            <div className="action-status">Generating podcast...</div>
+                                        )}
+                                        {podcastUrl && (
+                                            <div className="action-success">
+                                                Podcast generated successfully! 
+                                                <a href={podcastUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                                                    Listen to Podcast
+                                                </a>
+                                            </div>
+                                        )}
+                                        
+                                        {isSharing && (
+                                            <div className="action-status">Sharing content...</div>
+                                        )}
+                                        {shareUrl && (
+                                            <div className="action-success">
+                                                Content shared successfully! 
+                                                <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="result-link">
+                                                    View Shared Content
+                                                </a>
+                                            </div>
+                                        )}
+                                        
+                                        {isPosting && (
+                                            <div className="action-status">Posting content...</div>
+                                        )}
+                                        {postResult && (
+                                            <div className="action-success">{postResult}</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+                
+            default:
+                return null;
+        }
+    };
+
+    // The main render method
     return (
         <div>
             {/* Overlay container */}
             <div className={`fade-container ${showOverlay ? 'overlay' : ''}`}>
-                <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>
-                    <Textfit 
-                        mode="multi"
-                        min={12}
-                        max={48}
-                        style={{
-                            height: '100%',
-                            width: '80%',
-                        }}
-                    >
-                        <p className="overlay-title"></p>
-                    </Textfit>
+                <div className={`overlay-content ${showOverlay ? 'visible' : ''}`}>               
+                    {/* Add progress bar */}
+                    {showOverlay && renderProgressBar()}
                     
-                    {/* Phase containers - always show them all but control visibility with state */}
+                    {/* Phase containers */}
                     <div className="phase-containers">
-                        {/* Query Refinement Phase */}
-                        <div className="phase-card">
-                            <div 
-                                className="phase-header" 
-                                onClick={() => setIsQueryOpen(!isQueryOpen)}
-                            >
-                                {isQueryOpen ? 
-                                    <ChevronDown size={16} className="chevron-icon" /> : 
-                                    <ChevronRight size={16} className="chevron-icon" />
-                                }
-                                <span>Query Refinement</span>
-                            </div>
-                            
-                            {isQueryOpen && (
-                                <div className="phase-content">
-                                    <div className="query-refinement-content">
-                                        <p className="query-text">{responseData}</p>
-                                        
-                                        {isRefining && !isQuerySatisfactory && (
-                                            <div className="query-refinement-input">
-                                                <input
-                                                    type="text"
-                                                    value={searchValue}
-                                                    onChange={handleSearchChange}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                                                    placeholder="Refine your query..."
-                                                    className="refine-input"
-                                                />
-                                                <button 
-                                                    className="refine-send-btn"
-                                                    onClick={handleSend}
-                                                >
-                                                    <SendHorizonal size={16} />
-                                                    <span>Submit Refined Query</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Source Refinement Phase - only show if we're at or past this phase */}
-                        {(currentPhase === 'source_refinement' || currentPhase === 'draft_review') && (
-                            <div className="phase-card">
-                                <div 
-                                    className="phase-header" 
-                                    onClick={() => setIsSourcesOpen(!isSourcesOpen)}
-                                >
-                                    {isSourcesOpen ? 
-                                        <ChevronDown size={16} className="chevron-icon" /> : 
-                                        <ChevronRight size={16} className="chevron-icon" />
-                                    }
-                                    <span>Sources</span>
-                                </div>
-                                
-                                {isSourcesOpen && (
-                                    <div className="phase-content">
-                                        <div className="sources-content">
-                                            {isLoading ? (
-                                                <div className="loading-indicator">Loading sources...</div>
-                                            ) : error ? (
-                                                <div className="error-message">{error}</div>
-                                            ) : (
-                                                <>
-                                                    <div className="sources-list">
-                                                        {sources.map((source, index) => (
-                                                            <div 
-                                                                key={source.id}
-                                                                className="source-item"
-                                                                draggable={true}
-                                                                onDragStart={() => handleDragStart(index)}
-                                                                onDragOver={(e) => handleDragOver(e, index)}
-                                                                onDragEnd={handleDragEnd}
-                                                            >
-                                                                <div className="source-card">
-                                                                    <div className="source-header">
-                                                                        <div className="drag-handle">
-                                                                            <GripVertical size={14} />
-                                                                        </div>
-                                                                        <div 
-                                                                            className="source-title"
-                                                                            onClick={() => toggleSourceOpen(source.id)}
-                                                                        >
-                                                                            {openSourceIds.has(source.id) ? 
-                                                                                <ChevronDown size={14} /> : 
-                                                                                <ChevronRight size={14} />
-                                                                            }
-                                                                            
-                                                                            <span>{source.title || 'Untitled Source'}</span>
-                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
-                                                                                {source.root ?
-                                                                                    `| ${source.root}` : null}
-                                                                            </span>
-                                                                            <span style={{display: 'inline-block', fontSize: '14px'}}>
-                                                                                {source.date ?
-                                                                                    `| ${source.date}` : null}
-                                                                            </span>
-
-                                                                        </div>
-                                                                        <X 
-                                                                            size={14} 
-                                                                            className="delete-icon" 
-                                                                            onClick={() => removeSource(source.id)} 
-                                                                        />
-                                                                    </div>
-                                                                    
-                                                                    {openSourceIds.has(source.id) && (
-                                                                        <div className="source-details">
-                                                                            <div className="source-field">
-                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
-                                                                                    {source.url ? `${source.url} | ` : null}
-                                                                                </span>
-                                                                                <span style={{color: 'gray', fontSize: '12px'}}>
-                                                                                    {source.author ? `by ${source.author}` : null}
-                                                                                </span>
-                                                                                
-                                                                            </div>
-                                                                           
-                                                                        
-                                                                            <div className="source-field">
-                                                                                <label>{source.snippet}</label>
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                    
-                                                    {/* URL Input Field (conditionally rendered) */}
-                                                    {showUrlInput ? (
-                                                        <div className="url-input-container">
-                                                            <form onSubmit={handleUrlSubmit}>
-                                                                <div className="url-input-field">
-                                                                    <Link size={16} className="url-icon" />
-                                                                    <input 
-                                                                        type="url"
-                                                                        ref={urlInputRef}
-                                                                        placeholder="Enter URL to source..."
-                                                                        value={sourceUrl}
-                                                                        onChange={(e) => setSourceUrl(e.target.value)}
-                                                                        className="url-input"
-                                                                    />
-                                                                    <div className="url-input-actions">
-                                                                        <button 
-                                                                            type="button"
-                                                                            className="url-cancel-btn"
-                                                                            onClick={cancelUrlInput}
-                                                                            disabled={isAddingSource}
-                                                                        >
-                                                                            <X size={16} />
-                                                                        </button>
-                                                                        <button 
-                                                                            type="submit"
-                                                                            className="url-add-btn"
-                                                                            disabled={isAddingSource}
-                                                                        >
-                                                                            {isAddingSource ? 'Processing...' : 'Add'}
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    ) : (
-                                                        <button className="add-source-btn" onClick={addSource}>
-                                                            <Plus size={14} /> Add Source
-                                                        </button>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        
-                        {/* Draft Review Phase - only show if we're at this phase */}
-                        {currentPhase === 'draft_review' && (
-                            <div className="phase-card">
-                                <div 
-                                    className="phase-header" 
-                                    onClick={() => setIsDraftOpen(!isDraftOpen)}
-                                >
-                                    {isDraftOpen ? 
-                                        <ChevronDown size={16} className="chevron-icon" /> : 
-                                        <ChevronRight size={16} className="chevron-icon" />
-                                    }
-                                    <span>Draft</span>
-                                </div>
-                                
-                                {isDraftOpen && (
-                                    <div className="phase-content">
-                                        <div className="draft-content">
-                                            <p className="draft-text">{draftContent}</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        {renderPhase()}
                     </div>
                     
-                    {/* Confirmation buttons */}
-                    {renderConfirmationButtons()}
                 </div>
+                {/* Confirmation buttons */}
+                {renderConfirmationButtons()}
             </div>
 
             {/* QueryBar container */}
