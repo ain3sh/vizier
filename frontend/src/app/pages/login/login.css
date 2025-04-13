@@ -1,0 +1,51 @@
+.login-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #111827; /* Match main dark bg */
+    color: white;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .login-card {
+    background-color: #1f2937; /* same as other dark cards */
+    padding: 3rem 4rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    width: 90%;
+    max-width: 400px;
+  }
+  
+  .login-title {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .login-subtitle {
+    font-size: 1rem;
+    color: #d1d5db; /* gray-300 */
+    margin-bottom: 2rem;
+  }
+  
+  .login-btn {
+    background-color: #3a86ff; /* match send-btn */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+  }
+  
+  .login-btn:hover {
+    background-color: #2a75ef;
+    transform: scale(1.03);
+  }
+  
