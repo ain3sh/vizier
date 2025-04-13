@@ -204,7 +204,9 @@ function AgentFlowGraph() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') stepSimulation();
-      if (e.key.toLowerCase() === 'q') navigate('/');
+      if (e.key.toLowerCase() === 'q') {
+        navigate('/', { replace: true }); // Using replace to make it a temporary redirect
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);

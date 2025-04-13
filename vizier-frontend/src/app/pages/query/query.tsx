@@ -258,7 +258,6 @@ All implementations and evaluations will be documented with clear technical rati
         const savedState = sessionStorage.getItem('queryState');
         if (savedState) {
             const {
-                currentPhase,
                 isQuerySatisfactory,
                 refinedQuery,
                 searchValue,
@@ -266,7 +265,8 @@ All implementations and evaluations will be documented with clear technical rati
                 queryId
             } = JSON.parse(savedState);
             
-            setCurrentPhase(currentPhase);
+            // Always set to source refinement phase when returning from graph
+            setCurrentPhase('source_refinement');
             setIsQuerySatisfactory(isQuerySatisfactory);
             setRefinedQuery(refinedQuery);
             setSearchValue(searchValue);
