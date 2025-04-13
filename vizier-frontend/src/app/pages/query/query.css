@@ -9,15 +9,6 @@
     color: white;
 }
 
-.stop-btn {
-    background-color: rgb(27, 27, 27); /* Bootstrap danger color */
-    color: gray;
-    border-radius: 100px;
-    padding: 3px 3px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
 .send-btn {
     background-color: rgb(46, 46, 46);
     color: rgb(0, 168, 76);
@@ -106,7 +97,6 @@
 }
 
 .sources-card {
-    background-color: rgb(39, 39, 39);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -127,7 +117,12 @@
 }
 
 .sources-content {
-    padding: 15px;
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    padding: 16px;
 }
 
 /* Source items */
@@ -147,9 +142,12 @@
 
 .source-card {
     color: white;
-    background-color: rgb(48, 48, 48);
-    border-radius: 6px;
-    box-shadow: 0px 3px 0px rgba(255, 255, 255, 0.1);
+    background-color: rgb(32, 32, 32);
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
     overflow: hidden;
 }
 
@@ -157,7 +155,7 @@
     display: flex;
     align-items: center;
     padding: 8px 12px;
-    background-color: rgb(54, 54, 54);
+    background-color: rgb(41, 41, 41);
 }
 
 .drag-handle {
@@ -435,7 +433,11 @@
     color: white;
     /* background-color: rgba(48, 48, 48, 0.5); */
     padding: 16px;
-    border-radius: 4px; /* Reduced border radius */
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
     font-size: 18px;
     line-height: 1.6;
     white-space: pre-wrap;
@@ -453,7 +455,26 @@
 
 .draft-text {
     color: white;
-    /* background-color: rgb(48, 48, 48); */
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+    padding: 16px;
+    border-radius: 6px;
+    font-size: 18px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+
+.finalize-text {
+    color: white;
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
     padding: 16px;
     border-radius: 6px;
     font-size: 18px;
@@ -463,38 +484,41 @@
 
 /* URL Input styling */
 .url-input-container {
-  margin: 16px 0;
-  background-color: rgb(48, 48, 48);
-  border-radius: 6px;
-  padding: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    background-color: rgb(32, 32, 32);
+    border-radius: 8px; /* Reduced border radius */
+    border-width: 1px;
+    border-color: rgb(48, 48, 48);
+    border-style: solid;
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
+     padding: 10px;
+
 }
 
 .url-input-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .url-icon {
-  color: #6b7280;
+    color: #bebebe;
 }
 
 .url-input {
-  flex: 1;
-  background-color: rgb(60, 60, 60);
-  border: 1px solid #4d4d4d;
-  border-radius: 4px;
-  padding: 8px 12px;
-  color: white;
-  font-size: 14px;
-  width: 100%;
+    flex: 1;
+    background-color: rgb(41, 41, 41);
+    border: 1px solid #363636;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: white;
+    font-size: 14px;
+    width: 100%;
 }
 
 .url-input:focus {
-  outline: none;
-  border-color: rgb(0, 168, 76);
-  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+    outline: none;
+    border-color: rgb(0, 168, 76);
+    box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
 }
 
 .url-input-actions {

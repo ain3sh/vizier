@@ -676,8 +676,8 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                                 <span>Draft</span>
                             </div>
                             <div className="phase-content">
-                                <div className="draft-content">
-                                    <p className="draft-text">{draftContent}</p>
+                                <div className="draft-text">
+                                    {draftContent}
                                 </div>
                             </div>
                         </div>
@@ -741,8 +741,8 @@ Suggested query: "${searchValue} with recent developments and practical applicat
                                 <div className="finalize-content">
                                     <div className="finalized-draft">
                                         <h3>Final Content</h3>
-                                        <div className="draft-container">
-                                            <p>{draftContent}</p>
+                                        <div className="finalize-text">
+                                            {draftContent}
                                         </div>
                                     </div>
                                     

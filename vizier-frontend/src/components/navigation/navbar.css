@@ -2,7 +2,7 @@
     background-color: rgb(46, 46, 46);
     transition: width 0.3s ease;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 2.8px 5.6px 5.6px hsl(0deg 0% 0% / 0.41);
 }
 
 .navbar-logo-box {
