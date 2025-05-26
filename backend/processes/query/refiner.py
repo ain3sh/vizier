@@ -15,17 +15,17 @@ The process follows this flow:
 This component is the first stage in Vizier's research workflow, ensuring high-quality
 inputs for subsequent data collection, analysis, and report generation stages.
 """
-
-import asyncio
-from typing import List, Dict, Optional
-from routers.openrouter import OpenRouterClient
+import asyncio, uuid
+from typing import List, Dict, Optional, Tuple, Union
+from backend.routers.openrouter import OpenRouterClient
 from pydantic import BaseModel, Field
+from fastapi import HTTPException
+
 
 # constants
 REFINER_MODEL = "openrouter/optimus-alpha"
 MAX_TOKENS_REFINEMENT = 500
 TEMPERATURE_REFINEMENT = 0.7
-
 META_PROMPT = """
 You are an expert research assistant AI for specialized professionals and researchers. Your task is to transform user queries into comprehensive, actionable research plans that prioritize technical accuracy, timeliness, and depth.
 
@@ -94,11 +94,20 @@ class QueryRequest(BaseModel):
     """Request model for query refinement"""
     query: str = Field(description="The user's query or feedback on previous refinement")
     background: UserBackground = Field(description="User background information")
+    conversation_id: Optional[str] = Field(None, description="ID for continuing an existing refinement conversation")  # Added conversation_id
 class QueryResponse(BaseModel):
     """Response model for refined query"""
     refined_query: str = Field(description="The refined query")
     is_complete: bool = Field(description="Whether the refinement process is complete")
     conversation_id: Optional[str] = Field(None, description="Conversation ID for continuing the refinement")
+    input_tokens: Optional[int] = Field(None, description="Number of input tokens used for the refinement (native count)")
+    output_tokens: Optional[int] = Field(None, description="Number of output tokens generated for the refinement (native count)")
+    cost: Optional[float] = Field(None, description="Cost of the refinement API call in USD")
+
+
+# Global store for active refiner instances (simple in-memory approach)
+# Warning: This won't scale across multiple server processes and instances might leak memory if not cleaned up.
+active_refiners: Dict[str, "QueryRefiner"] = {}
 
 
 class QueryRefiner:
@@ -113,6 +122,8 @@ class QueryRefiner:
 
         Args:
             model: The identifier of the language model to use for refinement.
+            max_tokens: Max tokens for the LLM response.
+            temperature: Sampling temperature for the LLM.
         """
         self.client = OpenRouterClient()
         self.model = model
@@ -149,13 +160,15 @@ class QueryRefiner:
             background.user_type,
             background.research_purpose,
             background.user_description,
-            background.query_frequency
+            background.query_frequency,
+            self.max_tokens
         )
 
 
-    async def refine_query(self, current_query: str) -> Optional[str]:
+    async def refine_query(self, current_query: str) -> Optional[Tuple[str, Dict[str, Union[int, float]]]]:
         """
         Performs one round of query refinement using the LLM.
+        Also retrieves and returns the cost and token usage details for the API call.
 
         Args:
             current_query: The user's latest query or feedback.
@@ -163,6 +176,9 @@ class QueryRefiner:
         Returns:
             The refined query suggested by the LLM, or None if an error occurs.
         """
+        cost_info = {"input_tokens": 0, "output_tokens": 0, "cost": 0.0}
+        refined_query_content = None
+
         # add user's latest input to conversation history
         self.conversation_history.append({"role": "user", "content": current_query})
 
@@ -174,19 +190,31 @@ class QueryRefiner:
                 temperature=self.temperature,
             )
 
-            # extract content based on OpenRouter formatting
+            # extract content and generation ID based on OpenRouter formatting
             if isinstance(response, dict) and 'choices' in response:
                 if len(response['choices']) > 0 and 'message' in response['choices'][0]:
-                    refined_query = response['choices'][0]['message']['content']
+                    refined_query_content = response['choices'][0]['message']['content']
+                    generation_id = response.get('id')
 
-                    # add the assistant's response to conversation history
-                    self.conversation_history.append({"role": "assistant", "content": refined_query})
-                    return refined_query.strip()
+                    if generation_id:
+                        await asyncio.sleep(2) # wait for details to be available
+                        try:
+                            details = await self.client.get_generation_details(generation_id)
+                            stats = details.get('data', {})
+                            # Store native token counts and total cost
+                            cost_info["input_tokens"] = stats.get('native_tokens_prompt', 0)
+                            cost_info["output_tokens"] = stats.get('native_tokens_completion', 0)
+                            cost_info["cost"] = stats.get('total_cost', 0.0)
+                        except Exception as detail_error:
+                            print(f"Warning: Could not retrieve generation details for {generation_id}: {detail_error}")
+                    else:
+                        print("Warning: No generation ID found in response, cannot retrieve cost details.")
 
+                    # add the assistant's response to the history *after* potential detail retrieval
+                    self.conversation_history.append({"role": "assistant", "content": refined_query_content})
+                    return refined_query_content, cost_info
                 else:
-                    print("Unexpected response format - no message in choice")
-                    print(f"Response data: {response}")
-                    return None
+                    print(f"Unexpected response structure: 'message' not found in choices[0]. Response: {response}")
             else:
                 print(f"Unexpected response format: {response}")
                 return None
@@ -198,65 +226,74 @@ class QueryRefiner:
                 self.conversation_history.pop()
             return None
 
-    async def process_query(self, query: str, background: UserBackground) -> QueryResponse:
+    async def process_query(self, query: str, background: UserBackground) -> Optional[QueryResponse]:
         """
-        Process a new query or feedback for API integration.
+        Process the *initial* query for API integration. Sets background and performs first refinement.
 
         Args:
-            query: User's query or feedback
+            query: User's initial query
             background: User background information
 
         Returns:
-            QueryResponse with refined query and completion status
+            QueryResponse with the first refined query and completion status
         """
-        # Set up user background if this is a new conversation or background changed
+        # Set up user background - this initializes the conversation history
         self.set_user_background(background)
 
-        # get the refined query from the LLM
-        refined_query = await self.refine_query(query)
-        if refined_query is None:
+        # get the refined query and cost info from the LLM for the first time
+        refinement_result = await self.refine_query(query)
+
+        if refinement_result is None:
+            # Return a response indicating failure but keep is_complete=False
             return QueryResponse(
-                refined_query="Unable to process query. Please try again with a different query.",
-                is_complete=False
+                refined_query="Unable to process initial query. Please try again.",
+                is_complete=False,
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0
             )
 
-        #? since API: assume one refinement at a time, so is_complete is always False
-            # frontend needs to send a new request with feedback or approval
+        refined_query, cost_info = refinement_result
+
         return QueryResponse(
             refined_query=refined_query,
-            is_complete=False,
-            conversation_id=str(id(self.conversation_history))  # Simple unique ID
+            is_complete=False, # First step is never complete
+            conversation_id=None, # ID will be added by the endpoint
+            **cost_info # unpack input_tokens, output_tokens, cost
         )
 
-    async def finalize_query(self, conversation_id: str) -> QueryResponse:
+    async def continue_refinement(self, feedback: str) -> Optional[QueryResponse]:
         """
-        Mark the current query as approved.
+        Process user feedback for an ongoing refinement conversation.
 
         Args:
-            conversation_id: The conversation ID to finalize
+            feedback: User's feedback on the previous refinement.
 
         Returns:
-            QueryResponse with the final query and completion status set to True
+            QueryResponse with the newly refined query.
         """
-        if not self.conversation_history or len(self.conversation_history) < 2:
-            return QueryResponse(
-                refined_query="No query has been processed yet.",
-                is_complete=False
+        # History is already established, just add feedback and get next refinement
+        refinement_result = await self.refine_query(feedback)
+
+        if refinement_result is None:
+            # Return a response indicating failure
+             return QueryResponse(
+                refined_query="Unable to process feedback. Please try again.",
+                is_complete=False, # Keep refinement going if possible
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0
             )
 
-        # get the last assistant message as the final query
-        for message in reversed(self.conversation_history):
-            if message["role"] == "assistant":
-                return QueryResponse(
-                    refined_query=message["content"],
-                    is_complete=True,
-                    conversation_id=conversation_id
-                )
+        refined_query, cost_info = refinement_result
 
         return QueryResponse(
-            refined_query="No refined query found in conversation history.",
-            is_complete=False
+            refined_query=refined_query,
+            is_complete=False, # API assumes one refinement per call
+            conversation_id=None, # ID will be added by the endpoint
+            **cost_info # unpack input_tokens, output_tokens, cost
         )
+
 
 
     #! FOR TESTING ONLY
@@ -272,23 +309,18 @@ class QueryRefiner:
         Returns:
             The final, user-approved refined query.
         """
-        # Set up background info
-        self.set_user_background(
-            background.user_type,
-            background.research_purpose,
-            background.user_description,
-            background.query_frequency
-        )
-        
+        # Set up background info using the existing method
+        self.set_user_background(background)
+
         current_input = initial_query
         approved_query = None
 
         while True:
-            print("\n⏳ Refining query...")
+            print(f"\nRefining query: '{current_input[:100]}...'")
             refined_query = await self.refine_query(current_input)
 
             if refined_query is None:
-                print("❌ Failed to get refinement from the model. Please try again or modify your input.")
+                print("Failed to get refinement from the model. Please try again or modify your input.")
                 # get the last valid input as fallback
                 if len(self.conversation_history) > 1:
                     last_valid_input = current_input  # Use current input as fallback
@@ -303,22 +335,27 @@ class QueryRefiner:
                     # try again with same input
                     continue
                 else:
+                    print("Exiting refinement loop due to unrecoverable error.")
                     return initial_query
 
+            # unpack the result
+            refined_query_content, cost_info = refined_query
+
             print("\n---------------- Refined Query Suggestion ----------------")
-            print(refined_query)
+            print(refined_query_content)
+            print(f"(Tokens: In={cost_info['input_tokens']}, Out={cost_info['output_tokens']} | Cost: ${cost_info['cost']:.6f})")
             print("--------------------------------------------------------")
 
             feedback = input("Is this refined query good? (y/n/provide feedback): ").strip()
             if feedback.lower() == 'y':
-                approved_query = refined_query
-                print("\n✅ Query Approved!")
+                approved_query = refined_query_content
+                print("\nQuery Approved!")
                 break
             elif feedback.lower() == 'n':
                 current_input = input("Please provide feedback or a new version of the query: ").strip()
                 if not current_input:  # handle empty input
                     print("No feedback provided. Re-using the last suggestion for refinement.")
-                    current_input = refined_query
+                    current_input = refined_query_content # Use the content for re-refinement
                     # remove the last assistant message to avoid confusion
                     if self.conversation_history[-1]['role'] == 'assistant':
                         self.conversation_history.pop()
@@ -332,34 +369,55 @@ class QueryRefiner:
 
 
 #? FastAPI interface for query refinement
-async def refine_query(request: QueryRequest) -> QueryResponse:
+async def refine_query(request: QueryRequest,
+                       model: str,
+                       max_output_tokens: int = 1000,
+                       temperature: float = 0.6
+                       ) -> QueryResponse:
     """
-    API endpoint for refining a user query.
+    API endpoint for refining a user query, supporting iterative refinement.
+
+    If `conversation_id` is provided and valid, it continues an existing refinement.
+    Otherwise, it starts a new refinement session.
 
     Args:
-        request: The query request containing the user query and background info
+        request: The query request containing the user query/feedback, background info, and optional conversation_id.
+        model: The model to use for refinement.
+        max_output_tokens: Maximum tokens for the model output.
+        temperature: Sampling temperature for the model.
 
     Returns:
-        QueryResponse with the refined query
+        QueryResponse with the refined query content, token usage, cost information, and conversation_id.
     """
-    refiner = QueryRefiner()
-    response = await refiner.process_query(request.query, request.background)
-    await refiner.client.client.aclose()
-    return response
+    conversation_id = request.conversation_id
+    refiner: Optional[QueryRefiner] = None
+    response: Optional[QueryResponse] = None
 
-async def approve_query(conversation_id: str) -> QueryResponse: #! OPTIONAL
-    """
-    API endpoint for approving the current refined query.
+    if conversation_id and conversation_id in active_refiners:
+        # Continue existing conversation
+        print(f"Continuing conversation: {conversation_id}")
+        refiner = active_refiners[conversation_id]
+        response = await refiner.continue_refinement(request.query)
+        if response:
+            response.conversation_id = conversation_id  # Ensure ID is returned
+    else:
+        # Start new conversation
+        print("Starting new conversation")
+        refiner = QueryRefiner(model=model, max_tokens=max_output_tokens, temperature=temperature)
+        conversation_id = str(uuid.uuid4())  # Generate new ID
+        active_refiners[conversation_id] = refiner  # Store the new refiner instance
+        print(f"New conversation ID: {conversation_id}")
+        response = await refiner.process_query(request.query, request.background)
+        if response:
+            response.conversation_id = conversation_id  # Add the new ID to the response
 
-    Args:
-        conversation_id: The ID of the conversation to finalize
+    if response is None:
+        if conversation_id and conversation_id in active_refiners:
+            # Clean up failed refiner instance if it was just added
+            if refiner == active_refiners.get(conversation_id):  # Check if it's the one we just added
+                del active_refiners[conversation_id]
+        raise HTTPException(status_code=500, detail="Failed to process query refinement.")
 
-    Returns:
-        QueryResponse with the final approved query
-    """
-    refiner = QueryRefiner()
-    response = await refiner.finalize_query(conversation_id)
-    await refiner.client.client.aclose()
     return response
 
 
@@ -373,18 +431,35 @@ async def test_chat_completion(): #! FOR TESTING ONLY
     try:
         print("Testing OpenRouter API connection...")
         response = await client.chat_completion(
-            model=REFINER_MODEL,  # Using the same model as the refiner
+            model="google/gemma-3-27b-it:free",
             messages=[
                 {
                     "role": "user",
                     "content": "What's the capital of France?"
                 }
             ],
-            max_tokens=50,
+            max_tokens=10,
             temperature=0.7
         )
         print("Test Response:\n", response)
-        print("Connection successful!")
+
+        # Extract assistant message and generation ID
+        assistant_message = response.get('choices', [{}])[0].get('message', {}).get('content')
+        generation_id = response.get('id')
+
+        if assistant_message:
+            print("Assistant message:\n", assistant_message)
+        else:
+            print("Could not extract assistant message.")
+
+        if generation_id:
+            print(f"Generation ID: {generation_id}")
+            await asyncio.sleep(2) # Wait for details
+            details = await client.get_generation_details(generation_id)
+            print("Generation Details:\n", details)
+            print("Connection and detail retrieval successful!")
+        else:
+            print("Warning: Could not retrieve generation ID from test response.")
         return True
     except Exception as e:
         print(f"Test connection failed: {e}")
@@ -396,15 +471,14 @@ async def test_chat_completion(): #! FOR TESTING ONLY
 async def main(): #! FOR CLI TESTING ONLY
     """
     Main function to run the command-line query refinement tool.
-    This provides a CLI testing interface that uses the same code
-    as the API but with interactive prompts.
+    Updated to mimic the stateful API flow using conversation IDs.
     """
-    print("🚀 Starting Query Refinement Process...")
+    print("Starting Query Refinement Process...")
 
     # test connection first
     connection_ok = await test_chat_completion()
     if not connection_ok:
-        print("⚠️ Could not connect to OpenRouter API. Please check your API key and connection.")
+        print("Could not connect to OpenRouter API. Please check your API key and connection.")
         return
 
     # collect user background information
@@ -440,51 +514,114 @@ async def main(): #! FOR CLI TESTING ONLY
         if not initial_query:
             print("Query cannot be empty. Please try again.")
 
-    # use the API-compatible methods for consistency
-    refiner = QueryRefiner()
+    # --- Mimic API Flow ---
+    current_conversation_id: Optional[str] = None
+    current_query_input = initial_query
+    final_query_content = None
+    final_cost_info = {}
+    is_complete = False
+    refiner_instance: Optional[QueryRefiner] = None  # Keep track of the instance for cleanup
 
-    # initial refinement
-    response = await refiner.process_query(initial_query, background)
-    final_query = response.refined_query
+    while not is_complete:
+        print(f"\nRefining query/feedback: '{current_query_input[:100]}...'")
 
-    # feedback-based refinement loop
-    while not response.is_complete:
+        # Simulate API request object
+        req = QueryRequest(query=current_query_input, background=background, conversation_id=current_conversation_id)
+
+        # Simulate calling the API endpoint logic directly
+        temp_conversation_id = req.conversation_id
+        response: Optional[QueryResponse] = None
+
+        if temp_conversation_id and temp_conversation_id in active_refiners:
+            # Continue existing conversation
+            refiner_instance = active_refiners[temp_conversation_id]
+            response = await refiner_instance.continue_refinement(req.query)
+            if response:
+                response.conversation_id = temp_conversation_id
+        else:
+            # Start new conversation
+            refiner_instance = QueryRefiner(
+                model="google/gemma-3-27b-it:free",  # Or get from user input
+                max_tokens=1000,
+                temperature=0.6
+            )
+            temp_conversation_id = str(uuid.uuid4())
+            active_refiners[temp_conversation_id] = refiner_instance
+            response = await refiner_instance.process_query(req.query, req.background)
+            if response:
+                response.conversation_id = temp_conversation_id
+                current_conversation_id = temp_conversation_id  # Store the ID for next iteration
+
+        # --- End Simulate API call ---
+
+        if response is None or not response.refined_query or "Unable to process" in response.refined_query:
+            print(f"Failed to get refinement: {response.refined_query if response else 'No response'}")
+            # Decide whether to break or allow retry
+            retry = input("Retry with new input? (y/n): ").lower()
+            if retry != 'y':
+                print("Exiting refinement loop due to error.")
+                break
+            else:
+                current_query_input = input("Please provide new feedback or query: ").strip()
+                if not current_query_input:
+                    print("Input cannot be empty. Exiting.")
+                    break
+                continue  # Skip to next iteration with new input
+
+        final_query_content = response.refined_query  # Store latest refinement
+        final_cost_info = {  # Store latest cost info
+            "input_tokens": response.input_tokens,
+            "output_tokens": response.output_tokens,
+            "cost": response.cost
+        }
+        # Update conversation ID if it was newly created
+        if response.conversation_id:
+            current_conversation_id = response.conversation_id
+
         print("\n---------------- Refined Query Suggestion ----------------")
-        print(final_query)
+        print(final_query_content)
+        print(f"(Tokens: In={final_cost_info.get('input_tokens', 0)}, Out={final_cost_info.get('output_tokens', 0)} | Cost: ${final_cost_info.get('cost', 0.0):.6f})")
+        print(f"(Conversation ID: {current_conversation_id})")  # Show the ID
         print("--------------------------------------------------------")
 
         feedback = input("Is this refined query good? (y/n/provide feedback): ").strip()
 
         if feedback.lower() == 'y':
-            response = await refiner.finalize_query(response.conversation_id or "")
-            break
+            print("\nQuery Approved!")
+            is_complete = True
+        elif feedback.lower() == 'n':
+            current_query_input = input("Please provide feedback or a new version of the query: ").strip()
+            if not current_query_input:
+                print("No feedback provided. Re-using the last suggestion for refinement.")
+                current_query_input = final_query_content  # Use the content for re-refinement
+        else:
+            # User provided specific feedback directly
+            current_query_input = feedback
 
-        else: # use the feedback (or ask for it if just 'n')
-            if feedback.lower() == 'n':
-                feedback = input("Please provide feedback for improvement: ").strip()
-                if not feedback:
-                    print("No feedback provided, using previous suggestion")
-                    continue
+    # Display final approved query if refinement completed successfully
+    if is_complete and final_query_content:
+        print("\n================ Final Approved Query ================")
+        print(final_query_content)
+        print(f"(Final Tokens: In={final_cost_info.get('input_tokens', 0)}, Out={final_cost_info.get('output_tokens', 0)} | Final Cost: ${final_cost_info.get('cost', 0.0):.6f})")
+        print("====================================================")
+        print("\nThis refined query is now ready to guide a comprehensive research process.")
+    elif not final_query_content:
+        print("\nRefinement process did not complete successfully.")
 
-            # process the feedback and get a new refined query
-            print("⏳ Refining query based on feedback...")
-            response = await refiner.process_query(feedback, background)
-            final_query = response.refined_query
+    # Clean up the refiner instance used in the loop
+    if current_conversation_id and current_conversation_id in active_refiners:
+        print(f"\nCleaning up conversation: {current_conversation_id}")
+        refiner_to_close = active_refiners.pop(current_conversation_id)
+        await refiner_to_close.client.client.aclose()
+    elif refiner_instance:  # Handle case where loop exited before ID was stored but instance exists
+        await refiner_instance.client.client.aclose()
 
-    # display final approved query
-    print("\n================ Final Approved Query ================")
-    print(final_query)
-    print("====================================================")
-    print("\nThis refined query is now ready to guide a comprehensive research process.")
-
-    await refiner.client.client.aclose() # close client connection
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        asyncio.run(main())  # Run the main CLI testing function
     except KeyboardInterrupt:
-        print("\nExiting query refinement process.")
+        print("\nProcess interrupted by user.")
     except Exception as e:
         print(f"\nAn unexpected error occurred: {e}")
-        import traceback
-        traceback.print_exc()
+``` 

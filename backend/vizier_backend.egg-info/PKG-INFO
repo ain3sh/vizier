@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: vizier-backend
+Version: 0.1.0
+Summary: Backend for Vizier Agent Flow
+Author-email: ain3sh <ainesh@ain3sh.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Requires-Dist: databases[asyncpg]
+Requires-Dist: asyncpg
+Requires-Dist: httpx
+Requires-Dist: python-jose[cryptography]
+Requires-Dist: python-dotenv
+Requires-Dist: pydantic
+Requires-Dist: anyio
+Requires-Dist: pyasn1>=0.6.1

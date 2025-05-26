@@ -1,15 +1,31 @@
+# Core Backend Framework & ASGI Server
 fastapi
 uvicorn[standard]
 
-# async database and PostgreSQL
+# Async Database Layer (PostgreSQL)
 databases[asyncpg]
 asyncpg
 
-# Google OAuth
+# Authentication & Security
+python-jose[cryptography]  # JWT handling
+python-dotenv              # Environment variables (.env)
+pyasn1>=0.6.1              # for compatibility with pyasn1-modules
+
+# Async HTTP Clients (APIs, OAuth, LLMs)
 httpx
 
-# JWT handling
-python-jose[cryptography]
+# Data Validation / Models
+pydantic
 
-# Environment variable support
-python-dotenv
+# Async Concurrency
+anyio
+
+
+# (Optional) Dev + Testing Tools
+# pytest
+# coverage
+# httpx[cli]
+# mypy
+# black
+# isort
+# flake8

@@ -577,7 +577,7 @@ async def test_router():
         response = await router.route_query(request)
         
         print(f"Routing ID: {response.routing_id}")
-        print(f"Search Guidance:")
+        print("Search Guidance:")
         print(f"  Overall Strategy: {response.search_guidance.overall_strategy}")
         print(f"  Source Priorities: {response.search_guidance.source_priorities}")
         print(f"  Depth Guidance: {response.search_guidance.depth_guidance}")

@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+databases[asyncpg]
+asyncpg
+httpx
+python-jose[cryptography]
+python-dotenv
+pydantic
+anyio
+pyasn1>=0.6.1

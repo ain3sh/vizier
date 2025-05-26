@@ -7,10 +7,8 @@ This module provides a clean interface for:
 - Using tools/function calling with models
 """
 
-import os
+import os, json, httpx
 from typing import Dict, List, Optional, Union, Any, Literal
-import httpx
-import json
 from pydantic import BaseModel
 from dotenv import load_dotenv, find_dotenv
 from enum import Enum
@@ -270,6 +268,24 @@ class OpenRouterClient:
 
         Returns:
             Generation details including token counts, costs, and other metadata
+            Ex:
+            data: {
+                "id": "gen-nNPYi0ZB6GOK5TNCUMHJGgXo",
+                "model": "openai/gpt-4-32k",
+                "streamed": false,
+                "generation_time": 2,
+                "created_at": "2023-09-02T20:29:18.574972+00:00",
+                "tokens_prompt": 24,
+                "tokens_completion": 29,
+                "native_tokens_prompt": 24,
+                "native_tokens_completion": 29,
+                "num_media_prompt": null,
+                "num_media_completion": null,
+                "origin": "https://localhost:47323/",
+                "total_cost": 0.00492,
+                "cache_discount": null,
+                ...
+            }
         """
         url = f"{self.base_url}/generation"
         params = {"id": generation_id}
